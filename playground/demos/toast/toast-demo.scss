@@ -1,0 +1,90 @@
+/* DemoToastLayer：非库内样式，仅演示如何用 useToast 自绘 UI */
+.demo-toast-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 5000;
+  pointer-events: none;
+}
+
+.demo-toast-region {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: min(400px, calc(100vw - 32px));
+  pointer-events: none;
+}
+
+.demo-toast-region--top {
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  align-items: center;
+}
+
+.demo-toast-region--top-right {
+  top: 16px;
+  right: 16px;
+  align-items: flex-end;
+}
+
+.demo-toast-region--bottom {
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  align-items: center;
+}
+
+.demo-toast-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  pointer-events: auto;
+  background: #fff;
+  color: #1f1f1f;
+  font-size: 14px;
+}
+
+.demo-toast-item--info {
+  border-left: 4px solid #1677ff;
+}
+
+.demo-toast-item--success {
+  border-left: 4px solid #52c41a;
+}
+
+.demo-toast-item--warning {
+  border-left: 4px solid #faad14;
+}
+
+.demo-toast-item--error {
+  border-left: 4px solid #ff4d4f;
+}
+
+.demo-toast-msg {
+  flex: 1;
+  min-width: 0;
+  word-break: break-word;
+}
+
+.demo-toast-icon {
+  flex-shrink: 0;
+}
+
+.demo-toast-close {
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  opacity: 0.6;
+  font-size: 18px;
+  line-height: 1;
+  padding: 0 4px;
+}
+
+.demo-toast-close:hover {
+  opacity: 1;
+}

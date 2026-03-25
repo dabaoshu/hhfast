@@ -1,0 +1,23 @@
+---
+alwaysApply: true
+---
+vue 文件中可以使用tsx语法
+```vue
+<script lang="tsx">
+import { defineComponent } from 'vue';
+
+export default defineComponent({
+  name: 'HelloWorld',
+  props: {
+    msg: {
+      type: String,
+      required: true,
+    },
+  },
+  setup(props) {
+    return () => <div>{props.msg}</div>;
+  },
+});
+</script>
+```
+如果存在h语法尝试修复成tsx语法

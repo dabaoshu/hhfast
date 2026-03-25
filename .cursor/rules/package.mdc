@@ -1,0 +1,11 @@
+---
+alwaysApply: true
+---
+
+包默认用pnpm
+
+```json
+{
+  "packageManager": "pnpm"
+}
+```
