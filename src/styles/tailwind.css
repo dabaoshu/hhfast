@@ -1,0 +1,129 @@
+@import "tailwindcss";
+
+:root {
+  --tw-color-primary: #1677ff;
+  --tw-color-text: rgba(0, 0, 0, 0.88);
+  --tw-color-muted: #8c8c8c;
+  --tw-color-border: #d9d9d9;
+  --tw-color-bg: #fff;
+  --tw-radius-sm: 6px;
+  --tw-radius-md: 8px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+.tw-flex {
+  display: flex;
+}
+
+.tw-inline-flex {
+  display: inline-flex;
+}
+
+.tw-items-center {
+  align-items: center;
+}
+
+.tw-justify-between {
+  justify-content: space-between;
+}
+
+.tw-gap-1 {
+  gap: 4px;
+}
+
+.tw-gap-2 {
+  gap: 8px;
+}
+
+.tw-gap-3 {
+  gap: 12px;
+}
+
+.tw-w-full {
+  width: 100%;
+}
+
+.tw-h-full {
+  height: 100%;
+}
+
+.tw-min-h-0 {
+  min-height: 0;
+}
+
+.tw-overflow-auto {
+  overflow: auto;
+}
+
+.tw-p-2 {
+  padding: 8px;
+}
+
+.tw-p-3 {
+  padding: 12px;
+}
+
+.tw-px-2 {
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+.tw-py-1 {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+.tw-rounded-sm {
+  border-radius: var(--tw-radius-sm);
+}
+
+.tw-rounded-md {
+  border-radius: var(--tw-radius-md);
+}
+
+.tw-border {
+  border: 1px solid var(--tw-color-border);
+}
+
+.tw-bg-white {
+  background-color: var(--tw-color-bg);
+}
+
+.tw-text-primary {
+  color: var(--tw-color-primary);
+}
+
+.tw-text-muted {
+  color: var(--tw-color-muted);
+}
+
+.tw-text-sm {
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.tw-text-base {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.tw-font-medium {
+  font-weight: 500;
+}
+
+.tw-font-semibold {
+  font-weight: 600;
+}
+
+.tw-cursor-pointer {
+  cursor: pointer;
+}
+
+.tw-transition {
+  transition: all 0.2s ease;
+}

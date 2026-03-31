@@ -1,3 +1,4 @@
+/// <reference types="vue/jsx" />
 import { FunctionalComponent, PropType, HTMLAttributes } from "vue";
 import "./icon.scss";
 const svgBaseProps = {
@@ -6,7 +7,7 @@ const svgBaseProps = {
   fill: "currentColor",
   "aria-hidden": "true",
   focusable: "false",
-};
+} as const;
 export interface IconFontProps extends HTMLAttributes {
   spin?: boolean;
   rotate?: number;
@@ -53,7 +54,7 @@ function createScriptUrlElements(
     document.body.appendChild(script);
   }
 }
-const injectIconfont = (extraCommonProps) => {
+const injectIconfont = (extraCommonProps: Record<string, unknown>) => {
   const Iconfont: IconFontType = (props, context) => {
     const { attrs, slots } = context;
     const {

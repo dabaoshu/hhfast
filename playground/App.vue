@@ -8,13 +8,19 @@ import DemoModalLayer from './demos/modal/DemoModalLayer.vue'
 import ToastDemo from './demos/toast/ToastDemo.vue'
 import ModalDemo from './demos/modal/ModalDemo.vue'
 import IconDemo from './demos/icon/IconDemo.vue'
+import TableDemo from './demos/table/TableDemo.vue'
+import BackgroundTaskManagerDemo from './demos/background-task-manager/BackgroundTaskManagerDemo.vue'
+import TaskExecutionChainDemo from './demos/task-execution-chain/TaskExecutionChainDemo.vue'
 
-const activeTab = ref<'toast' | 'modal' | 'icon'>('toast')
+const activeTab = ref<'toast' | 'modal' | 'icon' | 'table' | 'backgroundTaskManager' | 'taskExecutionChain'>('toast')
 
 const tabs = [
   { key: 'toast', label: 'Toast', comp: ToastDemo },
   { key: 'modal', label: 'Modal', comp: ModalDemo },
   { key: 'icon', label: 'Icon', comp: IconDemo },
+  { key: 'table', label: 'Table', comp: TableDemo },
+  { key: 'backgroundTaskManager', label: 'TaskManager', comp: BackgroundTaskManagerDemo },
+  { key: 'taskExecutionChain', label: 'TaskChain', comp: TaskExecutionChainDemo },
 ] as const
 </script>
 

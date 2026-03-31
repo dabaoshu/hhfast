@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vueJsx from '@vitejs/plugin-vue-jsx'
+import tailwindcss from '@tailwindcss/vite'
 import { resolve } from 'node:path'
 
 /**
@@ -9,7 +10,7 @@ import { resolve } from 'node:path'
  */
 export default defineConfig({
   root: resolve(__dirname, 'playground'),
-  plugins: [vue(), vueJsx()],
+  plugins: [tailwindcss(), vue(), vueJsx()],
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
