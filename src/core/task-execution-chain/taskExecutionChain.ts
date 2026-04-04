@@ -1,134 +1,22 @@
-/**
- * 可视化节点状态。
- */
-export type TaskExecutionNodeStatus =
-  | 'pending'
-  | 'running'
-  | 'succeeded'
-  | 'failed'
-  | 'skipped'
-
-/**
- * 执行链节点。
- */
-export interface TaskExecutionNode<
-  TInput = unknown,
-  TOutput = unknown,
-  TMeta extends Record<string, unknown> = Record<string, unknown>,
-> {
-  /** 节点 ID。 */
-  id: string
-  /** 节点名称（用于展示）。 */
-  name: string
-  /** 节点类型（用于分组/筛选）。 */
-  type: string
-  /** 节点状态。 */
-  status: TaskExecutionNodeStatus
-  /** 入参快照。 */
-  input?: TInput
-  /** 出参快照。 */
-  output?: TOutput
-  /** 错误信息。 */
-  error?: unknown
-  /** 开始时间戳。 */
-  startedAt?: number
-  /** 结束时间戳。 */
-  finishedAt?: number
-  /** 扩展元数据。 */
-  metadata?: TMeta
-}
-
-/**
- * 执行链连线。
- */
-export interface TaskExecutionEdge {
-  /** 起点节点 ID。 */
-  from: string
-  /** 终点节点 ID。 */
-  to: string
-  /** 连线标签。 */
-  label?: string
-}
-
-/**
- * 执行链渲染结果。
- */
-export interface TaskExecutionRenderResult {
-  /** 渲染节点。 */
-  nodes: TaskExecutionNode[]
-  /** 渲染连线。 */
-  edges: TaskExecutionEdge[]
-  /** Mermaid 流程图源码。 */
-  mermaid: string
-}
-
-/**
- * 添加节点参数。
- */
-export interface AddTaskExecutionNodeOptions<
-  TInput = unknown,
-  TMeta extends Record<string, unknown> = Record<string, unknown>,
-> {
-  /** 节点 ID，不传则自动生成。 */
-  id?: string
-  /** 节点名称。 */
-  name: string
-  /** 节点类型。 */
-  type?: string
-  /** 初始状态。 */
-  status?: TaskExecutionNodeStatus
-  /** 入参。 */
-  input?: TInput
-  /** 开始时间戳。 */
-  startedAt?: number
-  /** 额外元信息。 */
-  metadata?: TMeta
-}
-
-/**
- * 完成节点参数。
- */
-export interface CompleteTaskExecutionNodeOptions<TOutput = unknown> {
-  /** 出参。 */
-  output?: TOutput
-  /** 结束时间戳，不传则取当前时间。 */
-  finishedAt?: number
-}
-
-/**
- * 失败节点参数。
- */
-export interface FailTaskExecutionNodeOptions {
-  /** 错误对象。 */
-  error?: unknown
-  /** 结束时间戳，不传则取当前时间。 */
-  finishedAt?: number
-}
-
-/**
- * 连线参数。
- */
-export interface ConnectTaskExecutionNodeOptions {
-  /** 起点节点 ID。 */
-  from: string
-  /** 终点节点 ID。 */
-  to: string
-  /** 连线标签。 */
-  label?: string
-}
-
-/**
- * Mermaid 渲染配置。
- */
-export interface TaskExecutionMermaidOptions {
-  /** 方向，默认 TD。 */
-  direction?: 'TD' | 'LR' | 'BT' | 'RL'
-}
-
-const createNodeId = (): string => {
-  const random = Math.random().toString(36).slice(2, 8)
-  return `node_${Date.now()}_${random}`
-}
+import { prefixedId } from '../../utils/uuid'
+import type {
+  AddTaskExecutionNodeOptions,
+  CompleteTaskExecutionNodeOptions,
+  ConnectTaskExecutionNodeOptions,
+  FailTaskExecutionNodeOptions,
+  TaskExecutionEdge,
+  TaskExecutionMermaidOptions,
+  TaskExecutionNode,
+  TaskExecutionNodeStatus,
+  TaskExecutionRenderResult,
+} from './taskExecutionChain.types'
+import type {
+  RunTracedFlowOptions,
+  TraceStepMetadata,
+  TraceStepOptions,
+  TracedFlowExecuteResult,
+  TracedFlowRunContext,
+} from './taskExecutionChain.flow-types'
 
 const toErrorMessage = (error: unknown): string => {
   if (error instanceof Error) {
@@ -164,6 +52,10 @@ const statusToEmoji = (status: TaskExecutionNodeStatus): string => {
   }
 }
 
+const TRACE_STEP_META = Symbol('task.execution.trace.meta')
+
+type TraceStepMetadataMap = Map<string, TraceStepMetadata>
+
 /**
  * 可视化任务执行链。
  *
@@ -183,7 +75,7 @@ export class TaskExecutionChain {
   addNode<TInput = unknown, TMeta extends Record<string, unknown> = Record<string, unknown>>(
     options: AddTaskExecutionNodeOptions<TInput, TMeta>,
   ): string {
-    const id = options.id ?? createNodeId()
+    const id = options.id ?? prefixedId('node')
     if (this.nodes.has(id)) {
       throw new Error(`TaskExecution node with id "${id}" already exists.`)
     }
@@ -352,3 +244,247 @@ export class TaskExecutionChain {
     }
   }
 }
+
+/**
+ * 收集 class 方法元数据的装饰器。
+ * @param options 步骤配置。
+ */
+export function TraceStep<TInput = unknown, TResult = unknown>(
+  options: TraceStepOptions<TInput, TResult>,
+): MethodDecorator {
+  return (target, propertyKey, descriptor): void => {
+    if (!descriptor || typeof descriptor.value !== 'function') {
+      throw new Error('TraceStep can only decorate class methods.')
+    }
+    const methodKey = String(propertyKey)
+    const holder = target as Record<PropertyKey, unknown>
+    const existing = (holder[TRACE_STEP_META] as TraceStepMetadataMap | undefined)
+      ?? new Map<string, TraceStepMetadata>()
+    existing.set(methodKey, {
+      key: methodKey,
+      name: options.name,
+      type: options.type ?? 'step',
+      deps: options.deps?.slice() ?? [],
+      order: options.order ?? Number.MAX_SAFE_INTEGER,
+      input: options.input as TraceStepMetadata['input'],
+      output: options.output as TraceStepMetadata['output'],
+    })
+    holder[TRACE_STEP_META] = existing
+  }
+}
+
+/**
+ * 获取对象上由 TraceStep 收集的步骤元数据。
+ * @param target class 实例或原型对象。
+ */
+export function getTraceStepMetadata(target: object): TraceStepMetadata[] {
+  const proto = Object.getPrototypeOf(target) as Record<PropertyKey, unknown> | null
+  const holder = (proto ?? target) as Record<PropertyKey, unknown>
+  const map = holder[TRACE_STEP_META] as TraceStepMetadataMap | undefined
+  if (!map || map.size === 0) {
+    return []
+  }
+  return [...map.values()].map(item => ({
+    ...item,
+    deps: item.deps?.slice() ?? [],
+  }))
+}
+
+/**
+ * 根据装饰器元数据执行流程并自动记录任务链。
+ * @param instance 包含步骤方法的 class 实例。
+ * @param options 运行配置。
+ */
+export async function runTracedFlow<TInput = unknown>(
+  instance: object,
+  options: RunTracedFlowOptions<TInput>,
+): Promise<TracedFlowExecuteResult> {
+  const steps = getTraceStepMetadata(instance)
+  if (steps.length === 0) {
+    throw new Error('No TraceStep metadata found on the instance.')
+  }
+
+  const stepMap = new Map<string, TraceStepMetadata>(steps.map(item => [item.key, item]))
+  validateTraceStepDependencies(stepMap)
+  const executionOrder = resolveTraceStepOrder(stepMap)
+  const chain = options.chain ?? new TaskExecutionChain()
+  const resultMap: Record<string, unknown> = {}
+  const statusMap = new Map<string, TaskExecutionNodeStatus>()
+  const stopOnError = options.stopOnError ?? true
+  let firstError: unknown
+
+  for (const key of executionOrder) {
+    const step = stepMap.get(key)
+    if (!step) {
+      continue
+    }
+    const deps = step.deps ?? []
+    const depFailed = deps.some(dep => statusMap.get(dep) !== 'succeeded')
+
+    const ctxBase: TracedFlowRunContext<TInput> = {
+      input: options.input,
+      results: resultMap,
+      stepKey: key,
+      chain,
+    }
+    const nodeInput = step.input
+      ? step.input(ctxBase)
+      : {
+          flowInput: options.input,
+          deps: deps.reduce<Record<string, unknown>>((acc, dep) => {
+            acc[dep] = resultMap[dep]
+            return acc
+          }, {}),
+        }
+    const nodeId = chain.addNode({
+      id: key,
+      name: step.name,
+      type: step.type,
+      status: depFailed ? 'skipped' : 'pending',
+      input: nodeInput,
+    })
+    for (const dep of deps) {
+      chain.connect({ from: dep, to: nodeId })
+    }
+
+    if (depFailed) {
+      statusMap.set(key, 'skipped')
+      continue
+    }
+
+    const startedAt = Date.now()
+    chain.startNode(nodeId, startedAt)
+    try {
+      const fn = (instance as Record<string, unknown>)[key]
+      if (typeof fn !== 'function') {
+        throw new Error(`TraceStep method "${key}" is not a function.`)
+      }
+      const result = await (fn as (ctx: TracedFlowRunContext<TInput>) => unknown).call(instance, ctxBase)
+      resultMap[key] = result
+      statusMap.set(key, 'succeeded')
+      chain.completeNode(nodeId, {
+        output: step.output ? step.output(result, ctxBase) : result,
+      })
+    }
+    catch (error) {
+      statusMap.set(key, 'failed')
+      chain.failNode(nodeId, { error })
+      if (firstError === undefined) {
+        firstError = error
+      }
+      if (stopOnError) {
+        break
+      }
+    }
+  }
+
+  if (firstError !== undefined && stopOnError) {
+    throw firstError
+  }
+
+  return {
+    resultMap,
+    chain,
+    renderResult: chain.render({ direction: options.direction ?? 'TD' }),
+  }
+}
+
+/**
+ * 校验依赖步骤是否存在。
+ * @param stepMap 步骤映射。
+ */
+function validateTraceStepDependencies(stepMap: Map<string, TraceStepMetadata>): void {
+  for (const step of stepMap.values()) {
+    const deps = step.deps ?? []
+    for (const dep of deps) {
+      if (!stepMap.has(dep)) {
+        throw new Error(`TraceStep dependency "${dep}" referenced by "${step.key}" does not exist.`)
+      }
+    }
+  }
+}
+
+/**
+ * 按 deps 拓扑排序，并在同层使用 order + key 排序。
+ * @param stepMap 步骤映射。
+ */
+function resolveTraceStepOrder(stepMap: Map<string, TraceStepMetadata>): string[] {
+  const indegree = new Map<string, number>()
+  const graph = new Map<string, string[]>()
+
+  for (const step of stepMap.values()) {
+    indegree.set(step.key, 0)
+    graph.set(step.key, [])
+  }
+  for (const step of stepMap.values()) {
+    for (const dep of step.deps ?? []) {
+      graph.get(dep)?.push(step.key)
+      indegree.set(step.key, (indegree.get(step.key) ?? 0) + 1)
+    }
+  }
+
+  const queue: string[] = [...indegree.entries()]
+    .filter(([, value]) => value === 0)
+    .map(([key]) => key)
+  sortStepKeys(queue, stepMap)
+
+  const order: string[] = []
+  while (queue.length > 0) {
+    const key = queue.shift()
+    if (!key) {
+      break
+    }
+    order.push(key)
+    for (const next of graph.get(key) ?? []) {
+      const value = (indegree.get(next) ?? 0) - 1
+      indegree.set(next, value)
+      if (value === 0) {
+        queue.push(next)
+        sortStepKeys(queue, stepMap)
+      }
+    }
+  }
+
+  if (order.length !== stepMap.size) {
+    throw new Error('TraceStep dependency graph contains cycle.')
+  }
+  return order
+}
+
+/**
+ * 对步骤 key 做稳定排序（order -> key）。
+ * @param keys 待排序 key。
+ * @param stepMap 步骤映射。
+ */
+function sortStepKeys(keys: string[], stepMap: Map<string, TraceStepMetadata>): void {
+  keys.sort((a, b) => {
+    const stepA = stepMap.get(a)
+    const stepB = stepMap.get(b)
+    const orderA = stepA?.order ?? Number.MAX_SAFE_INTEGER
+    const orderB = stepB?.order ?? Number.MAX_SAFE_INTEGER
+    if (orderA !== orderB) {
+      return orderA - orderB
+    }
+    return a.localeCompare(b)
+  })
+}
+
+export type {
+  AddTaskExecutionNodeOptions,
+  CompleteTaskExecutionNodeOptions,
+  ConnectTaskExecutionNodeOptions,
+  FailTaskExecutionNodeOptions,
+  TaskExecutionEdge,
+  TaskExecutionMermaidOptions,
+  TaskExecutionNode,
+  TaskExecutionNodeStatus,
+  TaskExecutionRenderResult,
+} from './taskExecutionChain.types'
+
+export type {
+  RunTracedFlowOptions,
+  TraceStepMetadata,
+  TraceStepOptions,
+  TracedFlowExecuteResult,
+  TracedFlowRunContext,
+} from './taskExecutionChain.flow-types'

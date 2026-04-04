@@ -29,10 +29,35 @@ export {
 
 export {
   BackgroundTaskManager,
+  TaskScheduler,
+  TaskHistoryStore,
+  TaskHistoryManager,
+  createTaskSnapshotStore,
+  createTaskPersistenceAdapter,
+  createTaskHistoryStore,
+  createTaskStorage,
+  createTaskPersistencePlugin,
+  restorePendingFromPersistence,
+  restorePendingFromSnapshots,
+  IndexedDBAdapter,
+  readJson,
+  writeJson,
+  getWebStorage,
 } from './core/background-task-manager'
 
 export {
+  TraceAll,
   TaskExecutionChain,
+  TaskExecutionStackTracer,
+  TraceCall,
+  TraceEnter,
+  TraceStep,
+  TraceVar,
+  createTraceVariable,
+  createStackTracer,
+  getLastTraceResult,
+  getTraceStepMetadata,
+  runTracedFlow,
 } from './core/task-execution-chain'
 
 export type {
@@ -88,6 +113,18 @@ export type {
   EnqueueTaskOptions,
   TaskExecuteContext,
   TaskExecutor,
+  TaskStorageBackend,
+  TaskSnapshotStoreOptions,
+  TaskHistoryStoreOptions,
+  TaskStorageBundleOptions,
+  TaskSnapshotStore,
+  TaskHistoryEntry,
+  TaskHistoryStats,
+  TaskHistoryQuery,
+  TaskPersistenceAdapter,
+  TaskPersistenceOptions,
+  StorageBackend,
+  TaskHistoryOptions,
 } from './core/background-task-manager'
 
 export type {
@@ -100,6 +137,20 @@ export type {
   TaskExecutionNode,
   TaskExecutionNodeStatus,
   TaskExecutionRenderResult,
+  RunTracedFlowOptions,
+  TraceStepMetadata,
+  TraceStepOptions,
+  TracedFlowExecuteResult,
+  TracedFlowRunContext,
+  StackTraceExecuteOptions,
+  StackTraceRunContext,
+  StackTraceStepOptions,
+  TraceAllOptions,
+  TraceCallOptions,
+  TraceEnterExecuteResult,
+  TraceEnterOptions,
+  TraceVarOptions,
+  TracedVariable,
 } from './core/task-execution-chain'
 
 /**

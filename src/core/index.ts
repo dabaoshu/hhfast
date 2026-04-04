@@ -1,10 +1,21 @@
+// 后台任务管理
 export {
   BackgroundTaskManager,
-} from './background-task-manager/backgroundTaskManager'
-
-export {
-  TaskExecutionChain,
-} from './task-execution-chain/taskExecutionChain'
+  TaskScheduler,
+  TaskHistoryStore,
+  TaskHistoryManager,
+  createTaskSnapshotStore,
+  createTaskPersistenceAdapter,
+  createTaskHistoryStore,
+  createTaskStorage,
+  createTaskPersistencePlugin,
+  restorePendingFromPersistence,
+  restorePendingFromSnapshots,
+  IndexedDBAdapter,
+  readJson,
+  writeJson,
+  getWebStorage,
+} from './background-task-manager'
 
 export type {
   BackgroundTask,
@@ -16,7 +27,38 @@ export type {
   EnqueueTaskOptions,
   TaskExecuteContext,
   TaskExecutor,
-} from './background-task-manager/backgroundTaskManager'
+  ScheduledTask,
+  TaskSchedulerOptions,
+  TaskSchedulerEventName,
+  TaskStorageBackend,
+  TaskSnapshotStoreOptions,
+  TaskHistoryStoreOptions,
+  TaskStorageBundleOptions,
+  TaskSnapshotStore,
+  TaskHistoryEntry,
+  TaskHistoryStats,
+  TaskHistoryQuery,
+  TaskPersistenceAdapter,
+  TaskPersistenceOptions,
+  StorageBackend,
+  TaskHistoryOptions,
+} from './background-task-manager'
+
+// 任务执行链
+export {
+  TraceAll,
+  TaskExecutionChain,
+  TaskExecutionStackTracer,
+  TraceCall,
+  TraceEnter,
+  TraceStep,
+  TraceVar,
+  createTraceVariable,
+  createStackTracer,
+  getLastTraceResult,
+  getTraceStepMetadata,
+  runTracedFlow,
+} from './task-execution-chain'
 
 export type {
   AddTaskExecutionNodeOptions,
@@ -28,5 +70,21 @@ export type {
   TaskExecutionNode,
   TaskExecutionNodeStatus,
   TaskExecutionRenderResult,
+  RunTracedFlowOptions,
+  TraceStepMetadata,
+  TraceStepOptions,
+  TracedFlowExecuteResult,
+  TracedFlowRunContext,
 } from './task-execution-chain/taskExecutionChain'
 
+export type {
+  StackTraceExecuteOptions,
+  StackTraceRunContext,
+  StackTraceStepOptions,
+  TraceAllOptions,
+  TraceCallOptions,
+  TraceEnterExecuteResult,
+  TraceEnterOptions,
+  TraceVarOptions,
+  TracedVariable,
+} from './task-execution-chain/taskExecutionStackTracer'

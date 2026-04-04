@@ -1,3 +1,6 @@
+import { prefixedId } from '../../utils/uuid'
+import { delayMs } from '../../utils/retryUtility'
+
 /**
  * 后台任务状态。
  */
@@ -155,11 +158,6 @@ interface InternalTaskRecord extends BackgroundTask {
 const defaultRetryDelay = (attempt: number): number =>
   Math.min(30000, 500 * Math.pow(2, Math.max(0, attempt - 1)))
 
-const createTaskId = (): string => {
-  const random = Math.random().toString(36).slice(2, 8)
-  return `task_${Date.now()}_${random}`
-}
-
 /**
  * 通用后台任务管理器。
  *
@@ -250,7 +248,7 @@ export class BackgroundTaskManager {
    * @returns 任务 ID。
    */
   enqueue<TPayload = unknown>(options: EnqueueTaskOptions<TPayload>): string {
-    const id = options.id ?? createTaskId()
+    const id = options.id ?? prefixedId('task')
     if (this.tasks.has(id)) {
       throw new Error(`Task with id "${id}" already exists.`)
     }
@@ -284,6 +282,75 @@ export class BackgroundTaskManager {
     }
 
     return id
+  }
+
+  /**
+   * 尝试将单条快照恢复为队列中的 pending 任务（供持久化层批量调用）。
+   * 非 `pending`、ID 已存在或 `type` 未注册时跳过。
+   *
+   * @param snapshot 任务快照。
+   * @returns 成功入队时返回任务 ID，否则返回 `null`。
+   */
+  tryRestorePendingFromSnapshot(snapshot: BackgroundTask): string | null {
+    if (snapshot.status !== 'pending') {
+      return null
+    }
+    if (this.tasks.has(snapshot.id)) {
+      return null
+    }
+    if (!this.handlers.has(snapshot.type)) {
+      return null
+    }
+
+    const rawProgress = snapshot.progress
+    const progress =
+      typeof rawProgress === 'number' && Number.isFinite(rawProgress)
+        ? Math.max(0, Math.min(1, rawProgress))
+        : 0
+
+    const createdAt =
+      typeof snapshot.createdAt === 'number' &&
+      Number.isFinite(snapshot.createdAt) &&
+      snapshot.createdAt > 0
+        ? snapshot.createdAt
+        : Date.now()
+
+    const task: InternalTaskRecord = {
+      id: snapshot.id,
+      type: snapshot.type,
+      payload: snapshot.payload,
+      status: 'pending',
+      progress,
+      progressMessage: snapshot.progressMessage,
+      createdAt,
+      attempts: Math.max(0, Math.floor(snapshot.attempts ?? 0)),
+      maxRetries: Math.max(0, Math.floor(snapshot.maxRetries ?? this.defaultMaxRetries)),
+    }
+
+    this.tasks.set(task.id, task)
+    this.queue.push(task.id)
+
+    const snap = this.cloneTask(task)
+    this.emit('task-added', snap)
+    this.safeCallPlugins('onTaskAdded', snap)
+
+    return task.id
+  }
+
+  /**
+   * 批量恢复 pending 快照结束后调用：触发队列变更事件与自动调度。
+   *
+   * @param restoredCount 本批成功恢复条数。
+   */
+  afterPendingRestoreBatch(restoredCount: number): void {
+    if (restoredCount <= 0) {
+      return
+    }
+    this.emit('queue-changed')
+    this.safeCallPlugins('onQueueChanged', this.getTasks())
+    if (this.autoStart) {
+      this.schedule()
+    }
   }
 
   /**
@@ -551,20 +618,12 @@ export class BackgroundTaskManager {
         const canRetry = task.attempts <= task.maxRetries
         if (canRetry) {
           task.status = 'pending'
-          const delay = this.retryDelay(task.attempts)
+          const waitMs = Math.max(0, this.retryDelay(task.attempts))
           const nextPending = this.cloneTask(task)
           this.safeCallPlugins('onTaskUpdated', prev, nextPending)
           this.emit('task-updated', nextPending)
-          setTimeout(() => {
-            const latest = this.tasks.get(task.id)
-            if (!latest || latest.status !== 'pending') {
-              return
-            }
-            this.queue.push(task.id)
-            this.emit('queue-changed')
-            this.safeCallPlugins('onQueueChanged', this.getTasks())
-            this.schedule()
-          }, Math.max(0, delay))
+          const retrySignal = task.controller?.signal
+          void this.waitThenRequeueTask(task.id, waitMs, retrySignal)
           return
         }
         task.status = 'failed'
@@ -579,6 +638,33 @@ export class BackgroundTaskManager {
       this.runningCount = Math.max(0, this.runningCount - 1)
       this.schedule()
     }
+  }
+
+  /**
+   * 使用与 `retryUtility.delayMs` 一致的延迟后重新入队（可响应本次执行的 AbortSignal）。
+   * @param taskId 任务 ID。
+   * @param ms 等待毫秒。
+   * @param signal 可选中断信号。
+   */
+  private async waitThenRequeueTask(
+    taskId: string,
+    ms: number,
+    signal?: AbortSignal,
+  ): Promise<void> {
+    try {
+      await delayMs(ms, signal)
+    }
+    catch {
+      return
+    }
+    const latest = this.tasks.get(taskId)
+    if (!latest || latest.status !== 'pending') {
+      return
+    }
+    this.queue.push(taskId)
+    this.emit('queue-changed')
+    this.safeCallPlugins('onQueueChanged', this.getTasks())
+    this.schedule()
   }
 
   /**

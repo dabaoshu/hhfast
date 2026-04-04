@@ -1,10 +1,44 @@
+```mermaid
 flowchart TD
-  fetch_user["✅ 拉取用户信息\nin: {\"userId\":1024}\nout: {\"id\":1024,\"name\":\"Alice\",\"level\":\"vip\"}\ntime: 120ms"]
-  fetch_orders["✅ 拉取订单列表\nin: {\"userId\":1024,\"pageSize\":20}\nout: [{\"id\":\"o1\",\"amount\":99},{\"id\":\"o2\",\"amount\":188}]\ntime: 180ms"]
-  calc_report["✅ 聚合报表计算\nin: {\"dimensions\":[\"amount\",\"count\"]}\nout: {\"count\":2,\"amount\":287,\"avg\":143.5}\ntime: 110ms"]
-  write_cache["✅ 写入缓存\nin: {\"key\":\"report:user:1024\"}\nout: {\"ok\":true,\"ttl\":300}\ntime: 20ms"]
-  notify["❌ 通知前端\nin: {\"channel\":\"report-ready\"}\nout: -\ntime: 29ms"]
-  fetch_user -->|user| calc_report
-  fetch_orders -->|orders| calc_report
-  calc_report -->|report| write_cache
-  write_cache -->|cache-key| notify
+  node_1775011692990_ynsnkm["✅ 创建订单流程\nin: {\"userId\":1001,\"skuId\":777}\nout: {\"ok\":true,\"orderId\":\"1001-777-1775011693140\"}\ntime: 150ms"]
+  node_1775011692990_ix0no2["✅ OrderServiceDemo.status#set\nin: \"running\"\nout: -\ntime: 0ms"]
+  node_1775011692990_3p0q4v["✅ localCounter#get\nin: -\nout: 0\ntime: 0ms"]
+  node_1775011692990_d9q8yv["✅ localCounter#set\nin: 1\nout: -\ntime: 0ms"]
+  node_1775011692990_3z1waa["✅ loadUser\nin: [1001]\nout: {\"id\":1001,\"name\":\"user-1001\"}\ntime: 50ms"]
+  node_1775011692990_kdb5dm["✅ OrderServiceDemo.loadUser\nin: [1001]\nout: {\"id\":1001,\"name\":\"user-1001\"}\ntime: 50ms"]
+  node_1775011693040_crs5r8["❌ loadPicture\nin: [1001]\nout: -\ntime: 10ms"]
+  node_1775011693040_nx9ox0["❌ OrderServiceDemo.loadPicture\nin: [1001]\nout: -\ntime: 10ms"]
+  node_1775011693051_960olc["✅ fetchUserAge\nin: [1001]\nout: 18\ntime: 10ms"]
+  node_1775011693051_4asby7["✅ external.getUserAge\nin: [1001]\nout: 18\ntime: 10ms"]
+  node_1775011693061_g1scni["✅ checkStock\nin: [777]\nout: {\"skuId\":777,\"available\":99}\ntime: 48ms"]
+  node_1775011693061_ugqjjq["✅ OrderServiceDemo.checkStock\nin: [777]\nout: {\"skuId\":777,\"available\":99}\ntime: 48ms"]
+  node_1775011693109_b208cx["✅ calcDiscount\nin: [18]\nout: 9\ntime: 6ms"]
+  node_1775011693109_ngdjl4["✅ OrderServiceDemo.calcDiscount\nin: [18]\nout: 9\ntime: 6ms"]
+  node_1775011693115_py42w7["✅ OrderServiceDemo.status#get\nin: -\nout: \"running\"\ntime: 0ms"]
+  node_1775011693115_zjqo0f["✅ OrderServiceDemo.status#set\nin: \"done\"\nout: -\ntime: 0ms"]
+  node_1775011693115_ld7cxf["✅ localCounter#get\nin: -\nout: 1\ntime: 0ms"]
+  node_1775011693115_k7enb8["✅ localCounter#get\nin: -\nout: 1\ntime: 0ms"]
+  node_1775011693115_a826d7["✅ localCounter#get\nin: -\nout: 1\ntime: 0ms"]
+  node_1775011693115_xnk35g["✅ submitOrder\nin: [{\"id\":1001,\"name\":\"user-1001\"},{\"skuId\":777,\"available\":99}]\nout: {\"ok\":true,\"orderId\":\"1001-777-1775011693140\"}\ntime: 25ms"]
+  node_1775011693115_rt5n8v["✅ OrderServiceDemo.submitOrder\nin: [{\"id\":1001,\"name\":\"user-1001\"},{\"skuId\":777,\"available\":99}]\nout: {\"ok\":true,\"orderId\":\"1001-777-1775011693140\"}\ntime: 25ms"]
+  node_1775011692990_ynsnkm --> node_1775011692990_ix0no2
+  node_1775011692990_ynsnkm --> node_1775011692990_3p0q4v
+  node_1775011692990_ynsnkm --> node_1775011692990_d9q8yv
+  node_1775011692990_ynsnkm --> node_1775011692990_3z1waa
+  node_1775011692990_3z1waa --> node_1775011692990_kdb5dm
+  node_1775011692990_ynsnkm --> node_1775011693040_crs5r8
+  node_1775011693040_crs5r8 --> node_1775011693040_nx9ox0
+  node_1775011692990_ynsnkm --> node_1775011693051_960olc
+  node_1775011693051_960olc --> node_1775011693051_4asby7
+  node_1775011692990_ynsnkm --> node_1775011693061_g1scni
+  node_1775011693061_g1scni --> node_1775011693061_ugqjjq
+  node_1775011692990_ynsnkm --> node_1775011693109_b208cx
+  node_1775011693109_b208cx --> node_1775011693109_ngdjl4
+  node_1775011692990_ynsnkm --> node_1775011693115_py42w7
+  node_1775011692990_ynsnkm --> node_1775011693115_zjqo0f
+  node_1775011692990_ynsnkm --> node_1775011693115_ld7cxf
+  node_1775011692990_ynsnkm --> node_1775011693115_k7enb8
+  node_1775011692990_ynsnkm --> node_1775011693115_a826d7
+  node_1775011692990_ynsnkm --> node_1775011693115_xnk35g
+  node_1775011693115_xnk35g --> node_1775011693115_rt5n8v
+```

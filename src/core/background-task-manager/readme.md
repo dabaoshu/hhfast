@@ -144,150 +144,127 @@ offIdle()
 
 ---
 
-## 7. 类型说明（核心）
+## 7. 增强模块
 
-### `BackgroundTaskManagerOptions`
+### 7.1 TaskScheduler - 任务调度器
 
-```ts
-interface BackgroundTaskManagerOptions {
-  concurrency?: number
-  defaultMaxRetries?: number
-  retryDelay?: (attempt: number) => number
-  autoStart?: boolean
-  plugins?: BackgroundTaskManagerPlugin[]
-}
-```
-
-### `EnqueueTaskOptions`
+定时任务扩展，支持延迟执行、定时执行、重复任务、优先级调度。
 
 ```ts
-interface EnqueueTaskOptions<TPayload = unknown> {
-  id?: string
-  type: string
-  payload: TPayload
-  maxRetries?: number
-}
-```
+import { BackgroundTaskManager, TaskScheduler } from '@/core'
 
-### `TaskExecuteContext`
+const manager = new BackgroundTaskManager()
+const scheduler = new TaskScheduler({ manager })
+scheduler.start()
 
-```ts
-interface TaskExecuteContext<TPayload = unknown> {
-  id: string
-  type: string
-  payload: TPayload
-  signal: AbortSignal
-  setProgress: (progress: number, message?: string) => void
-}
+// 延迟 5 秒执行
+scheduler.delay('job:process', { id: 1 }, 5000)
 
-interface BackgroundTaskManagerPlugin {
-  onInit?: (manager: BackgroundTaskManager) => void
-  onTaskAdded?: (task: BackgroundTask) => void
-  onTaskUpdated?: (prev: BackgroundTask, next: BackgroundTask) => void
-  onTaskRemoved?: (task: BackgroundTask) => void
-  onQueueChanged?: (tasks: ReadonlyArray<BackgroundTask>) => void
-  onIdle?: () => void
-}
-```
+// 定时执行（某个时间戳）
+scheduler.schedule('job:backup', {}, Date.now() + 3600_000)
 
----
-
-## 8. 接入建议
-
-- UI 框架层（Vue/React/Svelte）只负责订阅事件并渲染任务列表
-- 任务核心逻辑放在 `register(type, handler)` 内，保持可测试
-- 任务 `type` 建议采用命名空间风格：`module:action`
-- 对可中断任务，优先使用支持 `AbortSignal` 的 API
-- 对非幂等任务，谨慎设置 `maxRetries`
-
----
-
-## 9. 最小封装示例（可复用）
-
-```ts
-import { BackgroundTaskManager } from '@/core'
-
-export const taskManager = new BackgroundTaskManager({
-  concurrency: 2,
-  defaultMaxRetries: 0,
+// 重复任务（每 30 秒）
+scheduler.schedule('job:heartbeat', {}, Date.now(), {
+  repeating: true,
+  interval: 30_000,
+  maxExecutions: 0,  // 0 表示无限
 })
 
-export const enqueueTask = taskManager.enqueue.bind(taskManager)
-export const onTaskEvent = taskManager.on.bind(taskManager)
+// 取消定时任务
+scheduler.cancel(taskId)
+
+// 暂停/恢复
+scheduler.stop()
+scheduler.start()
 ```
 
-这样业务侧可以直接围绕 `enqueueTask` + `onTaskEvent` 构建统一后台任务中心。
+**API 概览：**
+
+| 方法 | 说明 |
+|------|------|
+| `delay(type, payload, ms)` | 延迟执行 |
+| `schedule(type, payload, timestamp)` | 定时执行 |
+| `cancel(id)` | 取消定时任务 |
+| `setEnabled(id, enabled)` | 启用/禁用 |
+| `reschedule(id, timestamp)` | 修改执行时间 |
+| `getScheduledTasks()` | 获取所有定时任务 |
+| `clear()` | 清空所有定时任务 |
 
 ---
 
-## 10. 看板字段映射建议
+### 7.2 任务存储（`storage/`）
 
-如果你要实现类似“后台任务管理面板”，可直接基于 `BackgroundTask` 字段映射：
+实现位于 `src/core/background-task-manager/storage/`：**任务快照**（按 `task.id` upsert，用于恢复 pending、插件落盘）与 **执行历史**（追加式记录、统计）分离，但共用 `TaskStorageBackend`（`localStorage` / `sessionStorage` / `memory`）。IndexedDB 仅用于快照侧的 `IndexedDBAdapter`。
 
-| 看板字段 | 来源 | 说明 |
-|---|---|---|
-| 任务 ID | `task.id` | 全局唯一 |
-| 任务类型 | `task.type` | 建议按 `module:action` 命名 |
-| 状态 | `task.status` | `pending/running/succeeded/failed/cancelled` |
-| 进度条 | `task.progress` | 建议按 `0-1` 映射百分比 |
-| 进度文案 | `task.progressMessage` | 阶段提示 |
-| 创建时间 | `task.createdAt` | 用于排序与筛选 |
-| 开始时间 | `task.startedAt` | 计算等待时长 |
-| 完成时间 | `task.finishedAt` | 计算总耗时 |
-| 尝试次数 | `task.attempts` | 观测重试情况 |
-| 最大重试 | `task.maxRetries` | 与 `attempts` 配合展示 |
-| 错误信息 | `task.error` | 失败原因展示 |
-
----
-
-## 11. 错误与重试策略建议
-
-- 瞬时错误（网络抖动、429/503）建议设置重试
-- 业务错误（参数非法、权限不足）建议直接失败
-- `retryDelay` 推荐指数退避，避免失败风暴
-- 对幂等任务可放宽 `maxRetries`，对非幂等任务建议保守
-
-参考策略：
+#### 7.2.1 TaskHistoryStore（历史）
 
 ```ts
-const taskManager = new BackgroundTaskManager({
-  defaultMaxRetries: 2,
-  retryDelay: (attempt) => Math.min(10_000, 500 * 2 ** (attempt - 1)),
+import { BackgroundTaskManager, TaskHistoryStore } from '@/core'
+
+const manager = new BackgroundTaskManager()
+const history = new TaskHistoryStore({
+  backend: 'localStorage',
+  storageKey: 'my_task_history',
+  maxHistoryRecords: 200,
+})
+
+manager.on('task-updated', (task) => {
+  if (['succeeded', 'failed', 'cancelled'].includes(task?.status ?? '')) {
+    history.record(task!)
+  }
+})
+
+const recentFails = history.query({ status: 'failed' })
+const stats = history.getStats()
+const typeStats = history.getTypeStats('file:upload')
+
+await history.save()
+await history.load()
+```
+
+也可使用 `createTaskHistoryStore(options)`，与 `new TaskHistoryStore(options)` 等价。
+
+**API 概览：** `record` / `query` / `getByType` / `getByTaskId` / `recent` / `getStats` / `getTypeStats` / `save`（async）/ `load`（async）/ `export` / `import`。
+
+#### 7.2.2 TaskSnapshotStore（快照）
+
+```ts
+import { createTaskSnapshotStore, IndexedDBAdapter } from '@/core'
+
+const snapshot = createTaskSnapshotStore({
+  backend: 'localStorage',
+  storageKey: 'my_tasks',
+  maxSnapshotRecords: 100,
+})
+
+const idb = new IndexedDBAdapter('my_db', 'tasks')
+
+await snapshot.saveTask(task)
+await snapshot.loadTasks()
+```
+
+`createTaskPersistenceAdapter` 仍为 `createTaskSnapshotStore` 的 **deprecated** 别名；类型 `TaskPersistenceAdapter` 等价于 `TaskSnapshotStore`。
+
+#### 7.2.3 一次创建两者
+
+```ts
+import { createTaskStorage } from '@/core'
+
+const { snapshot, history } = createTaskStorage({
+  snapshot: { backend: 'sessionStorage', storageKey: 'tasks' },
+  history: { backend: 'sessionStorage', storageKey: 'history' },
 })
 ```
 
----
+#### 7.2.4 兼容旧名
 
-## 12. 调试与排障清单
-
-- 任务一直 `pending`：检查是否 `pause()` 后未 `resume()`
-- 入队报错 “No handler registered”：
-  - 检查是否先 `register(type, handler)` 再 `enqueue`
-  - 检查 `type` 字符串是否一致
-- 取消无效：确认任务处理器内部是否尊重 `AbortSignal`
-- 进度不更新：确认处理器中是否调用 `setProgress`
+`TaskHistoryManager` 为 `TaskHistoryStore` 的别名；`TaskHistoryOptions` 与 `TaskHistoryStoreOptions` 一致（仍支持 `maxRecords` 作为 `maxHistoryRecords` 的兼容写法）。
 
 ---
 
-## 13. Playground 示例
+## 8. 插件机制
 
-仓库内可直接查看运行示例：
-
-- `playground/demos/background-task-manager/BackgroundTaskManagerDemo.vue`
-
-该示例包含：
-
-- 多类型任务创建
-- 并发调度
-- 进度展示
-- 取消与重试
-- 事件日志与终态清理
-
----
-
-## 14. 插件机制
-
-`BackgroundTaskManager` 通过插件机制提供“横切能力”扩展点，例如：
+`BackgroundTaskManager` 通过插件机制提供"横切能力"扩展点，例如：
 
 - 日志追踪（统一记录任务生命周期）
 - 监控与埋点（成功率、耗时、错误率）
@@ -295,7 +272,7 @@ const taskManager = new BackgroundTaskManager({
 - 审计记录（关键任务落库）
 - 告警（连续失败触发告警）
 
-### 14.1 生命周期钩子
+### 8.1 生命周期钩子
 
 插件可实现以下任意钩子：
 
@@ -311,7 +288,7 @@ const taskManager = new BackgroundTaskManager({
 - 所有钩子都在 `try/catch` 包裹下执行
 - 单个插件报错不会影响其他插件与核心调度
 
-### 14.2 简单日志插件示例
+### 8.2 简单日志插件示例
 
 ```ts
 import type {
@@ -354,7 +331,7 @@ const manager = new BackgroundTaskManager({
 })
 ```
 
-### 14.3 统计插件示例（按 type 聚合）
+### 8.3 统计插件示例（按 type 聚合）
 
 ```ts
 export interface TaskStats {
@@ -411,4 +388,96 @@ export function createStatsPlugin(target: TaskStatsMap): BackgroundTaskManagerPl
 - 平均耗时：`totalDurationMs / total`
 - 最近失败热点任务类型
 
+---
 
+## 9. 类型说明（核心）
+
+### `BackgroundTaskManagerOptions`
+
+```ts
+interface BackgroundTaskManagerOptions {
+  concurrency?: number
+  defaultMaxRetries?: number
+  retryDelay?: (attempt: number) => number
+  autoStart?: boolean
+  plugins?: BackgroundTaskManagerPlugin[]
+}
+```
+
+### `EnqueueTaskOptions`
+
+```ts
+interface EnqueueTaskOptions<TPayload = unknown> {
+  id?: string
+  type: string
+  payload: TPayload
+  maxRetries?: number
+}
+```
+
+### `TaskExecuteContext`
+
+```ts
+interface TaskExecuteContext<TPayload = unknown> {
+  id: string
+  type: string
+  payload: TPayload
+  signal: AbortSignal
+  setProgress: (progress: number, message?: string) => void
+}
+```
+
+---
+
+## 10. 接入建议
+
+- UI 框架层（Vue/React/Svelte）只负责订阅事件并渲染任务列表
+- 任务核心逻辑放在 `register(type, handler)` 内，保持可测试
+- 任务 `type` 建议采用命名空间风格：`module:action`
+- 对可中断任务，优先使用支持 `AbortSignal` 的 API
+- 对非幂等任务，谨慎设置 `maxRetries`
+
+---
+
+## 11. 错误与重试策略建议
+
+- 瞬时错误（网络抖动、429/503）建议设置重试
+- 业务错误（参数非法、权限不足）建议直接失败
+- `retryDelay` 推荐指数退避，避免失败风暴
+- 对幂等任务可放宽 `maxRetries`，对非幂等任务建议保守
+
+参考策略：
+
+```ts
+const taskManager = new BackgroundTaskManager({
+  defaultMaxRetries: 2,
+  retryDelay: (attempt) => Math.min(10_000, 500 * 2 ** (attempt - 1)),
+})
+```
+
+---
+
+## 12. 调试与排障清单
+
+- 任务一直 `pending`：检查是否 `pause()` 后未 `resume()`
+- 入队报错 "No handler registered"：
+  - 检查是否先 `register(type, handler)` 再 `enqueue`
+  - 检查 `type` 字符串是否一致
+- 取消无效：确认任务处理器内部是否尊重 `AbortSignal`
+- 进度不更新：确认处理器中是否调用 `setProgress`
+
+---
+
+## 13. Playground 示例
+
+仓库内可直接查看运行示例：
+
+- `playground/demos/background-task-manager/BackgroundTaskManagerDemo.vue`
+
+该示例包含：
+
+- 多类型任务创建
+- 并发调度
+- 进度展示
+- 取消与重试
+- 事件日志与终态清理
