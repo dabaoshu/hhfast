@@ -1,0 +1,137 @@
+// ==================== Splitter ====================
+.hh-splitter {
+  display: flex;
+  width: 100%;
+  height: 100%;
+
+  &--horizontal {
+    flex-direction: row;
+  }
+
+  &--vertical {
+    flex-direction: column;
+  }
+
+  &--dragging {
+    user-select: none;
+  }
+}
+
+// ==================== Panel ====================
+.hh-splitter-panel {
+  position: relative;
+  transition: width 0.15s ease, height 0.15s ease;
+
+  .hh-splitter--dragging & {
+    transition: none;
+  }
+
+  &--collapsed {
+    overflow: hidden !important;
+  }
+}
+
+// ==================== Bar ====================
+$bar-size: 1px;
+$trigger-size: 8px;
+$dragger-length: 32px;
+
+.hh-splitter-bar {
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  .hh-splitter--horizontal & {
+    width: $bar-size;
+    cursor: col-resize;
+  }
+
+  .hh-splitter--vertical & {
+    height: $bar-size;
+    cursor: row-resize;
+  }
+
+  &--draggable {
+    .hh-splitter--horizontal & {
+      cursor: col-resize;
+    }
+
+    .hh-splitter--vertical & {
+      cursor: row-resize;
+    }
+  }
+
+  &--active &__trigger,
+  &:hover &__trigger {
+    background: #1677ff;
+  }
+
+  &__trigger {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    background: #d9d9d9;
+    border-radius: 4px;
+    transition: background 0.2s;
+    z-index: 1;
+
+    .hh-splitter--horizontal & {
+      width: $trigger-size;
+      height: $dragger-length;
+      flex-direction: column;
+    }
+
+    .hh-splitter--vertical & {
+      height: $trigger-size;
+      width: $dragger-length;
+      flex-direction: row;
+    }
+  }
+
+  &__dragger {
+    .hh-splitter--horizontal & {
+      width: 2px;
+      height: 16px;
+      border-left: 1px solid rgba(255, 255, 255, 0.5);
+      border-right: 1px solid rgba(255, 255, 255, 0.5);
+    }
+
+    .hh-splitter--vertical & {
+      height: 2px;
+      width: 16px;
+      border-top: 1px solid rgba(255, 255, 255, 0.5);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+    }
+  }
+
+  // ---- 折叠按钮 ----
+  &__collapse-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    border: none;
+    background: transparent;
+    color: #fff;
+    cursor: pointer;
+    padding: 0;
+    opacity: 0;
+    transition: opacity 0.2s;
+    font-size: 8px;
+    line-height: 1;
+  }
+
+  &:hover &__collapse-btn,
+  &--active &__collapse-btn {
+    opacity: 1;
+  }
+
+  &__collapse-icon {
+    display: block;
+  }
+}

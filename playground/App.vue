@@ -11,14 +11,18 @@ import IconDemo from './demos/icon/IconDemo.vue'
 import TableDemo from './demos/table/TableDemo.vue'
 import BackgroundTaskManagerDemo from './demos/background-task-manager/BackgroundTaskManagerDemo.vue'
 import TaskExecutionChainDemo from './demos/task-execution-chain/TaskExecutionChainDemo.vue'
+import TooltipDemo from './demos/tooltip/TooltipDemo.vue'
+import SplitterDemo from './demos/splitter/SplitterDemo.vue'
 
-const activeTab = ref<'toast' | 'modal' | 'icon' | 'table' | 'backgroundTaskManager' | 'taskExecutionChain'>('toast')
+const activeTab = ref<'toast' | 'modal' | 'icon' | 'table' | 'backgroundTaskManager' | 'taskExecutionChain' | 'tooltip' | 'splitter'>('splitter')
 
 const tabs = [
   { key: 'toast', label: 'Toast', comp: ToastDemo },
   { key: 'modal', label: 'Modal', comp: ModalDemo },
   { key: 'icon', label: 'Icon', comp: IconDemo },
   { key: 'table', label: 'Table', comp: TableDemo },
+  { key: 'tooltip', label: 'Tooltip', comp: TooltipDemo },
+  { key: 'splitter', label: 'Splitter', comp: SplitterDemo },
   { key: 'backgroundTaskManager', label: 'TaskManager', comp: BackgroundTaskManagerDemo },
   { key: 'taskExecutionChain', label: 'TaskChain', comp: TaskExecutionChainDemo },
 ] as const

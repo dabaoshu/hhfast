@@ -356,6 +356,7 @@ Demo 中提供“复制可粘贴 Markdown”的拼接方式供参考。
 | `createTraceVariable` | 局部变量式追踪 |
 | `createStackTracer` / `TaskExecutionStackTracer` | 手动 trace 嵌套 |
 | `getLastTraceResult` | 取上次 `TraceEnter` 的 `render` 结果 |
+| `ChainDiffer` | 链路比较器，检测两次执行的差异 |
 
 ---
 
@@ -365,7 +366,70 @@ Demo 中提供“复制可粘贴 Markdown”的拼接方式供参考。
 
 ---
 
-## 十四、限制说明
+## 十四、链路比较器：`ChainDiffer`
+
+用于比较两条执行链路的差异，常用于：
+
+- **调试**：对比两次执行的差异
+- **回归测试**：验证任务执行是否符合预期
+- **性能分析**：对比不同输入的执行路径差异
+
+### 基础用法
+
+```ts
+import { ChainDiffer, TaskExecutionChain } from '@/core'
+
+// 静态方法比较
+const result = ChainDiffer.diff(chainA, chainB)
+
+if (result.hasDiff) {
+  console.log('新增节点:', result.addedNodes)
+  console.log('移除节点:', result.removedNodes)
+  console.log('修改节点:', result.modifiedNodes)
+  console.log('统计摘要:', result.summary)
+}
+```
+
+### 实例方法比较（可复用配置）
+
+```ts
+const differ = new ChainDiffer({
+  ignoreTiming: true,   // 忽略时间字段差异
+  ignoreErrors: false,  // 比较 error 字段
+  ignoreOutput: true,   // 忽略 output 差异
+})
+
+const result = differ.compare(chainA, chainB)
+```
+
+### 比较结果结构
+
+```ts
+interface ChainDiffResult {
+  addedNodes: TaskExecutionNode[]      // 新增节点
+  removedNodes: TaskExecutionNode[]    // 移除节点
+  modifiedNodes: Array<{              // 修改节点
+    before: TaskExecutionNode
+    after: TaskExecutionNode
+    changes: Array<{ field: string; before: unknown; after: unknown }>
+  }>
+  addedEdges: TaskExecutionEdge[]     // 新增边
+  removedEdges: TaskExecutionEdge[]    // 移除边
+  nodeDiffs: NodeDiff[]               // 所有节点差异
+  edgeDiffs: EdgeDiff[]               // 所有边差异
+  hasDiff: boolean                    // 是否有差异
+  summary: {                          // 统计摘要
+    totalAdded: number
+    totalRemoved: number
+    totalModified: number
+    unchanged: number
+  }
+}
+```
+
+---
+
+## 十五、限制说明
 
 - `TraceEnter` / `TraceCall` / `TraceAll` / `TraceVar` / `createTraceVariable` 的链路记录依赖**当前入口执行期间**的活动 tracer。
 - 并发多个入口同时跑同一实例时，请避免共享状态导致上下文混淆；必要时每请求新建 service 实例。

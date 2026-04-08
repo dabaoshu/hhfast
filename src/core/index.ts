@@ -58,6 +58,7 @@ export {
   getLastTraceResult,
   getTraceStepMetadata,
   runTracedFlow,
+  ChainDiffer,
 } from './task-execution-chain'
 
 export type {
@@ -76,6 +77,13 @@ export type {
   TracedFlowExecuteResult,
   TracedFlowRunContext,
 } from './task-execution-chain/taskExecutionChain'
+
+export type {
+  ChainDiffResult,
+  ChainDifferOptions,
+  EdgeDiff,
+  NodeDiff,
+} from './task-execution-chain'
 
 export type {
   StackTraceExecuteOptions,

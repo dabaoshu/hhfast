@@ -16,6 +16,10 @@ export {
   getLastTraceResult,
 } from './taskExecutionStackTracer'
 
+export {
+  ChainDiffer,
+} from './chainDiffer'
+
 export type {
   AddTaskExecutionNodeOptions,
   CompleteTaskExecutionNodeOptions,
@@ -44,3 +48,10 @@ export type {
   TraceVarOptions,
   TracedVariable,
 } from './taskExecutionStackTracer'
+
+export type {
+  ChainDiffResult,
+  ChainDifferOptions,
+  NodeDiff,
+  EdgeDiff,
+} from './chainDiffer'

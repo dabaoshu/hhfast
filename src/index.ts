@@ -1,5 +1,7 @@
 import type { App, Plugin } from 'vue'
 import { HTable } from './components/table'
+import { HTooltip, vTooltip } from './components/tooltip'
+import { Splitter, SplitterPanel } from './components/splitter'
 import './styles/tailwind.css'
 
 export {
@@ -28,6 +30,16 @@ export {
 } from './components/table'
 
 export {
+  HTooltip,
+  vTooltip,
+} from './components/tooltip'
+
+export {
+  Splitter,
+  SplitterPanel,
+} from './components/splitter'
+
+export {
   BackgroundTaskManager,
   TaskScheduler,
   TaskHistoryStore,
@@ -46,6 +58,7 @@ export {
 } from './core/background-task-manager'
 
 export {
+  ChainDiffer,
   TraceAll,
   TaskExecutionChain,
   TaskExecutionStackTracer,
@@ -104,6 +117,23 @@ export type {
 } from './components/table'
 
 export type {
+  TooltipPlacement,
+  TooltipTrigger,
+  TooltipProps,
+  TooltipDirectiveValue,
+  TooltipDirectiveOptions,
+} from './components/tooltip'
+
+export type {
+  SplitterOrientation,
+  SplitterSize,
+  SplitterCollapsible,
+  SplitterProps,
+  SplitterEmits,
+  SplitterPanelProps,
+} from './components/splitter'
+
+export type {
   BackgroundTask,
   BackgroundTaskManagerPlugin,
   BackgroundTaskManagerEventName,
@@ -151,6 +181,10 @@ export type {
   TraceEnterOptions,
   TraceVarOptions,
   TracedVariable,
+  ChainDiffResult,
+  ChainDifferOptions,
+  EdgeDiff,
+  NodeDiff,
 } from './core/task-execution-chain'
 
 /**
@@ -159,6 +193,10 @@ export type {
 export const HhfastUi: Plugin = {
   install(app: App) {
     app.component('HTable', HTable)
+    app.component('HTooltip', HTooltip)
+    app.component('HSplitter', Splitter)
+    app.component('HSplitterPanel', SplitterPanel)
+    app.directive('tooltip', vTooltip)
   },
 }
 
