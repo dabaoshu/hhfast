@@ -96,3 +96,27 @@ export type {
   TraceVarOptions,
   TracedVariable,
 } from './task-execution-chain/taskExecutionStackTracer'
+
+// 断点续传
+export {
+  ResumableTransfer,
+  LocalStorageTransferStore,
+  createLocalStorageTransferStore,
+} from './resumable-transfer'
+
+export type {
+  ChunkEventExtra,
+  ChunkSnapshot,
+  ChunkStatus,
+  ChunkTransferContext,
+  CreateTransferTaskOptions,
+  MergeFn,
+  ResumableTransferEventName,
+  ResumableTransferListener,
+  ResumableTransferOptions,
+  TransferFn,
+  TransferProgressStore,
+  TransferTaskPersistSnapshot,
+  TransferTaskSnapshot,
+  TransferTaskStatus,
+} from './resumable-transfer'

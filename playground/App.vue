@@ -13,8 +13,10 @@ import BackgroundTaskManagerDemo from './demos/background-task-manager/Backgroun
 import TaskExecutionChainDemo from './demos/task-execution-chain/TaskExecutionChainDemo.vue'
 import TooltipDemo from './demos/tooltip/TooltipDemo.vue'
 import SplitterDemo from './demos/splitter/SplitterDemo.vue'
+import PopoverDemo from './demos/popover/PopoverDemo.vue'
+import ResumableTransferDemo from './demos/resumable-transfer/ResumableTransferDemo.vue'
 
-const activeTab = ref<'toast' | 'modal' | 'icon' | 'table' | 'backgroundTaskManager' | 'taskExecutionChain' | 'tooltip' | 'splitter'>('splitter')
+const activeTab = ref<'toast' | 'modal' | 'icon' | 'table' | 'backgroundTaskManager' | 'taskExecutionChain' | 'tooltip' | 'popover' | 'splitter' | 'resumableTransfer'>('popover')
 
 const tabs = [
   { key: 'toast', label: 'Toast', comp: ToastDemo },
@@ -22,9 +24,11 @@ const tabs = [
   { key: 'icon', label: 'Icon', comp: IconDemo },
   { key: 'table', label: 'Table', comp: TableDemo },
   { key: 'tooltip', label: 'Tooltip', comp: TooltipDemo },
+  { key: 'popover', label: 'Popover', comp: PopoverDemo },
   { key: 'splitter', label: 'Splitter', comp: SplitterDemo },
   { key: 'backgroundTaskManager', label: 'TaskManager', comp: BackgroundTaskManagerDemo },
   { key: 'taskExecutionChain', label: 'TaskChain', comp: TaskExecutionChainDemo },
+  { key: 'resumableTransfer', label: 'Transfer', comp: ResumableTransferDemo },
 ] as const
 </script>
 
@@ -133,6 +137,6 @@ const tabs = [
   margin-left: 200px;
   flex: 1;
   padding: 32px 36px 64px;
-  max-width: 820px;
+  max-width: 1200px;
 }
 </style>
