@@ -18,6 +18,33 @@ const ACTIVE_TRACER = new WeakMap<object, TaskExecutionStackTracer>()
 const TRACE_VAR_STORE = new WeakMap<object, Map<string | symbol, unknown>>()
 
 /**
+ * @description 将任意文本转换为可作为节点 ID 的安全片段。
+ * - 仅保留字母/数字，其余字符统一转为 `_`
+ * - 压缩重复 `_`，并去除首尾 `_`
+ * - 保底返回 `unnamed`
+ * @param value 原始文本。
+ */
+function toSafeIdPart(value: string): string {
+  const normalized = value
+    .replace(/[^a-zA-Z0-9]+/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_+|_+$/g, '')
+  return normalized || 'unnamed'
+}
+
+/**
+ * @description 生成稳定、可读的步骤节点 ID。
+ * @param seq 自增序号（同一次 TraceEnter 内从 1 递增）。
+ * @param type 节点类型。
+ * @param name 节点名称。
+ */
+function createStableStepNodeId(seq: number, type: string, name: string): string {
+  const typePart = toSafeIdPart(type || 'stack_step')
+  const namePart = toSafeIdPart(name || 'step')
+  return `step_${seq}_${typePart}_${namePart}`
+}
+
+/**
  * 创建调用栈追踪器。
  * @param chain 可选链路实例。
  */
@@ -331,6 +358,8 @@ export function TraceEnter<TInput = unknown>(
 export class TaskExecutionStackTracer {
   private readonly chain: TaskExecutionChain
   private readonly stack: string[] = []
+  /** 用于生成稳定可复现的节点 id（每次 TraceEnter 执行从 0 开始）。 */
+  private seq = 0
 
   /**
    * @param chain 可选链路实例，不传则内部自动创建。
@@ -386,7 +415,10 @@ export class TaskExecutionStackTracer {
     runner: (ctx: StackTraceRunContext) => Promise<TResult> | TResult,
   ): Promise<TResult> {
     const parentNodeId = options.parentId ?? this.getCurrentNodeId()
+    const nextSeq = ++this.seq
+    const id = createStableStepNodeId(nextSeq, options.type ?? 'stack-step', options.name)
     const nodeId = this.chain.addNode({
+      id,
       name: options.name,
       type: options.type ?? 'stack-step',
       input: options.input,
@@ -436,7 +468,10 @@ export class TaskExecutionStackTracer {
     runner: () => TResult,
   ): TResult {
     const parentNodeId = options.parentId ?? this.getCurrentNodeId()
+    const nextSeq = ++this.seq
+    const id = createStableStepNodeId(nextSeq, options.type ?? 'stack-step', options.name)
     const nodeId = this.chain.addNode({
+      id,
       name: options.name,
       type: options.type ?? 'stack-step',
       input: options.input,

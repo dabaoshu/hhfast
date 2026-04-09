@@ -1,5 +1,5 @@
 /** Table 组件与类型导出。 */
-export { default as HTable } from './TableView.vue';
+export { HTable, tableProps } from './TableView';
 
 /** 核心状态管理 hook。 */
 export { normalizeTagList, useTableState } from './useTableState';

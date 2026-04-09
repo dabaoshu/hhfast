@@ -318,6 +318,97 @@ const displayDiffSubtitle = computed(() => {
 })
 
 /**
+ * @description 当前对比模式下左侧（变更前）节点列表。
+ */
+const diffBeforeNodes = computed<TaskExecutionNode[]>(() => {
+  if (diffDisplayMode.value === 'baseline-current') {
+    return baselineSnapshot.value?.nodes ?? []
+  }
+  const left = Number(compareBeforeSeqStr.value)
+  if (!Number.isInteger(left)) {
+    return []
+  }
+  const record = orderRunRecords.value.find(row => row.seq === left)
+  return record?.snapshot.nodes ?? []
+})
+
+/**
+ * @description 当前对比模式下右侧（变更后）节点列表。
+ */
+const diffAfterNodes = computed<TaskExecutionNode[]>(() => {
+  if (diffDisplayMode.value === 'baseline-current') {
+    return state.result.nodes
+  }
+  const right = Number(compareAfterSeqStr.value)
+  if (!Number.isInteger(right)) {
+    return []
+  }
+  const record = orderRunRecords.value.find(row => row.seq === right)
+  return record?.snapshot.nodes ?? []
+})
+
+/**
+ * @description 对比节点面板左侧标题。
+ */
+const diffBeforeTitle = computed(() => {
+  if (diffDisplayMode.value === 'baseline-current') {
+    return '变更前（基准快照）'
+  }
+  return compareBeforeSeqStr.value ? `变更前（记录 #${compareBeforeSeqStr.value}）` : '变更前（未选择）'
+})
+
+/**
+ * @description 对比节点面板右侧标题。
+ */
+const diffAfterTitle = computed(() => {
+  if (diffDisplayMode.value === 'baseline-current') {
+    return '变更后（当前画布）'
+  }
+  return compareAfterSeqStr.value ? `变更后（记录 #${compareAfterSeqStr.value}）` : '变更后（未选择）'
+})
+
+type NodeDiffMark = 'added' | 'removed' | 'modified' | 'unchanged'
+
+interface DiffNodeViewItem {
+  node: TaskExecutionNode
+  mark: NodeDiffMark
+}
+
+/**
+ * @description 将 ChainDiffer 节点差异转成按 id 查询的映射。
+ */
+const diffNodeMarkMap = computed<Record<string, Exclude<NodeDiffMark, 'unchanged'>>>(() => {
+  const diff = displayChainDiff.value
+  if (!diff?.nodeDiffs?.length) {
+    return {}
+  }
+  return diff.nodeDiffs.reduce<Record<string, Exclude<NodeDiffMark, 'unchanged'>>>((acc, item) => {
+    acc[item.id] = item.type
+    return acc
+  }, {})
+})
+
+/**
+ * @description 对比主视图左侧节点（变更前）及差异标记。
+ */
+const mainBeforeNodeList = computed<DiffNodeViewItem[]>(() =>
+  diffBeforeNodes.value.map(node => ({
+    node,
+    mark: diffNodeMarkMap.value[node.id] ?? 'unchanged',
+  })),
+)
+
+/**
+ * @description 对比主视图右侧节点（变更后）及差异标记。
+ */
+const mainAfterNodeList = computed<DiffNodeViewItem[]>(() =>
+  diffAfterNodes.value.map(node => ({
+    node,
+    mark: diffNodeMarkMap.value[node.id] ?? 'unchanged',
+  })),
+)
+
+/**
  * @description 无对比结果时的提示（引导操作）。
  */
 const diffCompareHint = computed(() => {
@@ -697,23 +788,87 @@ const copyMarkdownMermaid = async (): Promise<void> => {
             </li>
           </ul>
         </details>
+        <div class="chain-diff-nodes">
+          <div class="chain-diff-nodes__col">
+            <h4 class="chain-diff-nodes__title">{{ diffBeforeTitle }}</h4>
+            <ul class="chain-diff-nodes__list">
+              <li v-for="node in diffBeforeNodes" :key="'before-' + node.id" class="chain-diff-nodes__item">
+                <span class="mono chain-diff-nodes__id">{{ node.id }}</span>
+                <span class="chain-diff-nodes__name">{{ node.name }}</span>
+                <span class="mono chain-diff-nodes__status">{{ node.status }}</span>
+              </li>
+              <li v-if="diffBeforeNodes.length === 0" class="chain-diff-nodes__empty">
+                暂无节点
+              </li>
+            </ul>
+          </div>
+          <div class="chain-diff-nodes__col">
+            <h4 class="chain-diff-nodes__title">{{ diffAfterTitle }}</h4>
+            <ul class="chain-diff-nodes__list">
+              <li v-for="node in diffAfterNodes" :key="'after-' + node.id" class="chain-diff-nodes__item">
+                <span class="mono chain-diff-nodes__id">{{ node.id }}</span>
+                <span class="chain-diff-nodes__name">{{ node.name }}</span>
+                <span class="mono chain-diff-nodes__status">{{ node.status }}</span>
+              </li>
+              <li v-if="diffAfterNodes.length === 0" class="chain-diff-nodes__empty">
+                暂无节点
+              </li>
+            </ul>
+          </div>
+        </div>
       </template>
     </div>
 
     <div class="trace-enter-demo__layout">
       <div class="panel">
-        <h3 class="panel__title">节点列表</h3>
-        <div class="node-list">
-          <button v-for="node in state.result.nodes" :key="node.id" type="button" class="node-card"
-            :class="`node-card--${node.status}`" @click="selectedNodeId = node.id">
-            <div class="node-card__head">
-              <strong>{{ node.name }}</strong>
-              <span class="status">{{ node.status }}</span>
+        <h3 class="panel__title">节点列表（差异对比）</h3>
+        <div class="node-compare-list">
+          <div class="node-compare-list__col">
+            <h4 class="node-compare-list__title">{{ diffBeforeTitle }}</h4>
+            <div class="node-list">
+              <button v-for="item in mainBeforeNodeList" :key="'main-before-' + item.node.id" type="button" class="node-card"
+                :class="[
+                  `node-card--${item.node.status}`,
+                  `node-card--diff-${item.mark}`,
+                  { 'node-card--selected': selectedNodeId === item.node.id },
+                ]" @click="selectedNodeId = item.node.id">
+                <div class="node-card__head">
+                  <strong>{{ item.node.name }}</strong>
+                  <span class="status">{{ item.node.status }}</span>
+                </div>
+                <div class="mono node-card__meta">id: {{ item.node.id }}</div>
+                <div class="node-card__meta">type: {{ item.node.type }}</div>
+                <div class="node-card__meta">duration: {{ durationText(item.node) }}</div>
+                <div class="node-card__meta node-card__diff">
+                  diff: <span class="mono">{{ item.mark }}</span>
+                </div>
+              </button>
+              <div v-if="mainBeforeNodeList.length === 0" class="empty">暂无数据</div>
             </div>
-            <div class="mono node-card__meta">id: {{ node.id }}</div>
-            <div class="node-card__meta">type: {{ node.type }}</div>
-            <div class="node-card__meta">duration: {{ durationText(node) }}</div>
-          </button>
+          </div>
+          <div class="node-compare-list__col">
+            <h4 class="node-compare-list__title">{{ diffAfterTitle }}</h4>
+            <div class="node-list">
+              <button v-for="item in mainAfterNodeList" :key="'main-after-' + item.node.id" type="button" class="node-card"
+                :class="[
+                  `node-card--${item.node.status}`,
+                  `node-card--diff-${item.mark}`,
+                  { 'node-card--selected': selectedNodeId === item.node.id },
+                ]" @click="selectedNodeId = item.node.id">
+                <div class="node-card__head">
+                  <strong>{{ item.node.name }}</strong>
+                  <span class="status">{{ item.node.status }}</span>
+                </div>
+                <div class="mono node-card__meta">id: {{ item.node.id }}</div>
+                <div class="node-card__meta">type: {{ item.node.type }}</div>
+                <div class="node-card__meta">duration: {{ durationText(item.node) }}</div>
+                <div class="node-card__meta node-card__diff">
+                  diff: <span class="mono">{{ item.mark }}</span>
+                </div>
+              </button>
+              <div v-if="mainAfterNodeList.length === 0" class="empty">暂无数据</div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -741,11 +896,6 @@ const copyMarkdownMermaid = async (): Promise<void> => {
         </template>
         <div v-else class="empty">暂无数据</div>
       </div>
-    </div>
-
-    <div class="panel">
-      <h3 class="panel__title">Mermaid</h3>
-      <pre class="mono mermaid">{{ state.result.mermaid }}</pre>
     </div>
 
     <div class="panel">
@@ -936,6 +1086,29 @@ const copyMarkdownMermaid = async (): Promise<void> => {
   overflow: auto;
 }
 
+.node-compare-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.node-compare-list__col {
+  min-width: 0;
+}
+
+.node-compare-list__title {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #555;
+}
+
+@media (max-width: 920px) {
+  .node-compare-list {
+    grid-template-columns: 1fr;
+  }
+}
+
 .node-card {
   text-align: left;
   border: 1px solid #d9d9d9;
@@ -943,6 +1116,7 @@ const copyMarkdownMermaid = async (): Promise<void> => {
   padding: 10px;
   background: #fff;
   cursor: pointer;
+  transition: box-shadow 0.18s ease, border-color 0.18s ease, background-color 0.18s ease;
 }
 
 .node-card__head {
@@ -955,6 +1129,10 @@ const copyMarkdownMermaid = async (): Promise<void> => {
 .node-card__meta {
   font-size: 12px;
   color: #555;
+}
+
+.node-card__diff {
+  margin-top: 2px;
 }
 
 .status {
@@ -974,6 +1152,24 @@ const copyMarkdownMermaid = async (): Promise<void> => {
 
 .node-card--failed {
   border-color: #ffccc7;
+}
+
+.node-card--diff-added {
+  box-shadow: inset 0 0 0 1px #95de64;
+}
+
+.node-card--diff-removed {
+  box-shadow: inset 0 0 0 1px #ff7875;
+}
+
+.node-card--diff-modified {
+  box-shadow: inset 0 0 0 1px #ffc069;
+}
+
+.node-card--selected {
+  border-color: #1677ff !important;
+  background: #f0f7ff;
+  box-shadow: inset 0 0 0 1px #1677ff, 0 0 0 2px rgb(22 119 255 / 18%);
 }
 
 .detail-line {
@@ -1188,5 +1384,74 @@ pre {
   font-size: 12px;
   max-height: 160px;
   overflow: auto;
+}
+
+.chain-diff-nodes {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 860px) {
+  .chain-diff-nodes {
+    grid-template-columns: 1fr;
+  }
+}
+
+.chain-diff-nodes__col {
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+  background: #fff;
+  min-height: 120px;
+}
+
+.chain-diff-nodes__title {
+  margin: 0;
+  padding: 8px 10px;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.chain-diff-nodes__list {
+  list-style: none;
+  margin: 0;
+  padding: 6px 10px;
+  max-height: 220px;
+  overflow: auto;
+}
+
+.chain-diff-nodes__item {
+  display: grid;
+  grid-template-columns: minmax(120px, 1.2fr) minmax(120px, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px dashed #f5f5f5;
+  font-size: 12px;
+  > span{
+    word-wrap: break-word;
+  }
+}
+
+.chain-diff-nodes__item:last-child {
+  border-bottom: none;
+}
+
+.chain-diff-nodes__id,
+.chain-diff-nodes__status {
+  color: #666;
+}
+
+.chain-diff-nodes__name {
+  color: #333;
+  word-break: break-word;
+}
+
+.chain-diff-nodes__empty {
+  font-size: 12px;
+  color: #999;
+  padding: 6px 0;
 }
 </style>

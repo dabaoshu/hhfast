@@ -1,0 +1,98 @@
+$bg: #fff;
+$shadow: 0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 9px 28px 8px rgba(0, 0, 0, 0.05);
+$arrow-size: 8px;
+$radius: 8px;
+
+.hh-popover-wrapper {
+  display: inline-block;
+}
+
+.hh-popover-reference {
+  display: inline-block;
+}
+
+.hh-popover {
+  pointer-events: auto;
+
+  &__inner {
+    background: $bg;
+    border-radius: $radius;
+    box-shadow: $shadow;
+  }
+
+  &__title {
+    min-width: 180px;
+    padding: 8px 16px;
+    font-weight: 600;
+    font-size: 14px;
+    line-height: 1.5;
+    color: rgba(0, 0, 0, 0.88);
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  &__content {
+    padding: 12px 16px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: rgba(0, 0, 0, 0.88);
+  }
+
+  &__arrow {
+    position: absolute;
+    width: 0;
+    height: 0;
+    border: $arrow-size solid transparent;
+  }
+
+  // ---- top ----
+  &--top {
+    .hh-popover__arrow {
+      bottom: -#{$arrow-size * 2};
+      border-top-color: $bg;
+      filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.05));
+      transform: translateX(-50%);
+    }
+  }
+
+  // ---- bottom ----
+  &--bottom {
+    .hh-popover__arrow {
+      top: -#{$arrow-size * 2};
+      border-bottom-color: $bg;
+      filter: drop-shadow(0 -2px 2px rgba(0, 0, 0, 0.05));
+      transform: translateX(-50%);
+    }
+  }
+
+  // ---- left ----
+  &--left {
+    .hh-popover__arrow {
+      right: -#{$arrow-size * 2};
+      border-left-color: $bg;
+      filter: drop-shadow(2px 0 2px rgba(0, 0, 0, 0.05));
+      transform: translateY(-50%);
+    }
+  }
+
+  // ---- right ----
+  &--right {
+    .hh-popover__arrow {
+      left: -#{$arrow-size * 2};
+      border-right-color: $bg;
+      filter: drop-shadow(-2px 0 2px rgba(0, 0, 0, 0.05));
+      transform: translateY(-50%);
+    }
+  }
+}
+
+// ---- 过渡动画 ----
+.hh-popover-fade-enter-active,
+.hh-popover-fade-leave-active {
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.hh-popover-fade-enter-from,
+.hh-popover-fade-leave-to {
+  opacity: 0;
+  transform: scale(0.96);
+}

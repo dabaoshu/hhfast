@@ -1,4 +1,4 @@
-export { default as HTooltip } from './HTooltip.vue'
+export { HTooltip, tooltipProps } from './HTooltip'
 export { vTooltip } from './vTooltip'
 
 export type {

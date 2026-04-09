@@ -1,0 +1,80 @@
+$bg: rgba(0, 0, 0, 0.85);
+$arrow-size: 6px;
+$radius: 6px;
+
+.hh-tooltip-wrapper {
+  display: inline-block;
+}
+
+.hh-tooltip-reference {
+  display: inline-block;
+}
+
+.hh-tooltip {
+  pointer-events: auto;
+
+  &__content {
+    padding: 6px 10px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #fff;
+    background: $bg;
+    border-radius: $radius;
+    word-wrap: break-word;
+  }
+
+  &__arrow {
+    position: absolute;
+    width: 0;
+    height: 0;
+    border: $arrow-size solid transparent;
+  }
+
+  // ---- top ----
+  &--top {
+    .hh-tooltip__arrow {
+      bottom: -#{$arrow-size * 2};
+      border-top-color: $bg;
+      transform: translateX(-50%);
+    }
+  }
+
+  // ---- bottom ----
+  &--bottom {
+    .hh-tooltip__arrow {
+      top: -#{$arrow-size * 2};
+      border-bottom-color: $bg;
+      transform: translateX(-50%);
+    }
+  }
+
+  // ---- left ----
+  &--left {
+    .hh-tooltip__arrow {
+      right: -#{$arrow-size * 2};
+      border-left-color: $bg;
+      transform: translateY(-50%);
+    }
+  }
+
+  // ---- right ----
+  &--right {
+    .hh-tooltip__arrow {
+      left: -#{$arrow-size * 2};
+      border-right-color: $bg;
+      transform: translateY(-50%);
+    }
+  }
+}
+
+// ---- 过渡动画 ----
+.hh-tooltip-fade-enter-active,
+.hh-tooltip-fade-leave-active {
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.hh-tooltip-fade-enter-from,
+.hh-tooltip-fade-leave-to {
+  opacity: 0;
+  transform: scale(0.96);
+}
