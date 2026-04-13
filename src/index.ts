@@ -1,14 +1,12 @@
-import type { App, Plugin } from 'vue'
-import { HTable } from './components/table'
-import { HTooltip, vTooltip } from './components/tooltip'
-import { Splitter, SplitterPanel } from './components/splitter'
-import './styles/tailwind.css'
+import type { App, Plugin } from "vue";
+import { HTable } from "./components/table";
+export * from "./components/popover";
+import { HTooltip, vTooltip } from "./components/tooltip";
+import { Splitter, SplitterPanel } from "./components/splitter";
+import { HConfigProvider } from "./components/config-provider";
+import "./styles/tailwind.css";
 
-export {
-  toast,
-  createToast,
-  useToast,
-} from './components/toast'
+export { toast, createToast, useToast, HToastLayer } from "./components/toast";
 
 export {
   modal,
@@ -21,23 +19,20 @@ export {
   modalList,
   MODAL_DEFAULTS,
   normalizeModalContent,
-} from './components/modal'
+  HModalLayer,
+} from "./components/modal";
+
+export { HTable, useTableState, normalizeTagList } from "./components/table";
+
+export { HTooltip, vTooltip } from "./components/tooltip";
+
+export { Splitter, SplitterPanel } from "./components/splitter";
 
 export {
-  HTable,
-  useTableState,
-  normalizeTagList,
-} from './components/table'
-
-export {
-  HTooltip,
-  vTooltip,
-} from './components/tooltip'
-
-export {
-  Splitter,
-  SplitterPanel,
-} from './components/splitter'
+  HConfigProvider,
+  useHhConfig,
+  HH_CONFIG_KEY,
+} from "./components/config-provider";
 
 export {
   BackgroundTaskManager,
@@ -55,7 +50,7 @@ export {
   readJson,
   writeJson,
   getWebStorage,
-} from './core/background-task-manager'
+} from "./core/background-task-manager";
 
 export {
   ChainDiffer,
@@ -71,7 +66,7 @@ export {
   getLastTraceResult,
   getTraceStepMetadata,
   runTracedFlow,
-} from './core/task-execution-chain'
+} from "./core/task-execution-chain";
 
 export type {
   ToastApi,
@@ -82,7 +77,7 @@ export type {
   ToastGlobalDefaults,
   UseToastReturn,
   PushToastPayload,
-} from './components/toast'
+} from "./components/toast";
 
 export type {
   ModalApi,
@@ -95,7 +90,7 @@ export type {
   ModalGlobalDefaults,
   UseModalReturn,
   UseModalLayerReturn,
-} from './components/modal'
+} from "./components/modal";
 
 export type {
   TableAlign,
@@ -114,7 +109,7 @@ export type {
   TableSortOrder,
   TableSorterResult,
   TableValueType,
-} from './components/table'
+} from "./components/table";
 
 export type {
   TooltipPlacement,
@@ -122,7 +117,7 @@ export type {
   TooltipProps,
   TooltipDirectiveValue,
   TooltipDirectiveOptions,
-} from './components/tooltip'
+} from "./components/tooltip";
 
 export type {
   SplitterOrientation,
@@ -131,7 +126,12 @@ export type {
   SplitterProps,
   SplitterEmits,
   SplitterPanelProps,
-} from './components/splitter'
+} from "./components/splitter";
+
+export type {
+  HConfigProviderProps,
+  HhConfig,
+} from "./components/config-provider";
 
 export type {
   BackgroundTask,
@@ -155,7 +155,7 @@ export type {
   TaskPersistenceOptions,
   StorageBackend,
   TaskHistoryOptions,
-} from './core/background-task-manager'
+} from "./core/background-task-manager";
 
 export type {
   AddTaskExecutionNodeOptions,
@@ -185,19 +185,22 @@ export type {
   ChainDifferOptions,
   EdgeDiff,
   NodeDiff,
-} from './core/task-execution-chain'
+} from "./core/task-execution-chain";
+
+export * from "./core/resumable-transfer";
 
 /**
- * 全量注册：目前提供可注册组件 `HTable`。
+ * 全量注册：提供可注册组件与指令。
  */
 export const HhfastUi: Plugin = {
   install(app: App) {
-    app.component('HTable', HTable)
-    app.component('HTooltip', HTooltip)
-    app.component('HSplitter', Splitter)
-    app.component('HSplitterPanel', SplitterPanel)
-    app.directive('tooltip', vTooltip)
+    app.component("HTable", HTable);
+    app.component("HTooltip", HTooltip);
+    app.component("HSplitter", Splitter);
+    app.component("HSplitterPanel", SplitterPanel);
+    app.component("HConfigProvider", HConfigProvider);
+    app.directive("tooltip", vTooltip);
   },
-}
+};
 
-export default HhfastUi
+export default HhfastUi;

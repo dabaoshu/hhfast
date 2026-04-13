@@ -1,6 +1,9 @@
-# Modal 子模块说明（纯逻辑）
+# Modal 子模块
 
-与 **Toast** 子模块相同：只维护 **全局弹层栈**、**命令式 API** 与 **`useModal`**，**不包含蒙层/对话框 DOM**。业务自行用 `Teleport`、`Transition`、设计系统 `Dialog` 等渲染；与 **Icon** 子模块相同：入口聚合导出，按需引用。
+维护 **全局弹层栈**、**命令式 API**、**`useModal`** / **`useModalLayer`** 以及内置渲染层 **`HModalLayer`**。
+
+- **开箱即用**：在根组件挂载 `<HModalLayer />` 即可获得默认 Modal UI。
+- **自定义 UI**：也可不使用 `HModalLayer`，通过 `useModalLayer()` / `useModal()` 订阅栈后自行渲染。
 
 ## 从入口导入
 
@@ -102,6 +105,7 @@ try {
 | `types.ts` | `ModalRecord`、`ModalShowOptions`、`ModalOpenPayload`、`ModalConfirmPayload`、`ModalType` |
 | `modalState.ts` | 栈、`openModal` / `closeModal` / `closeAllModals`、`useModal` |
 | `createModal.ts` | `createModal`（含 `confirm`）与默认 `modal` 单例 |
+| `HModalLayer.vue` | 内置渲染层组件 |
 | `index.ts` | 对外导出 |
 
 ## 与 `messageConfirm` 的关系

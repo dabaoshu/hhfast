@@ -28,3 +28,6 @@ export type { UseModalLayerReturn } from './useModalLayer';
 /** 命令式 API */
 export { createModal, modal } from './createModal';
 export type { ModalApi } from './createModal';
+
+/** 内置渲染层组件 */
+export { default as HModalLayer } from './HModalLayer.vue';

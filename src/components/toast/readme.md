@@ -1,8 +1,9 @@
-# Toast 子模块说明（纯逻辑）
+# Toast 子模块
 
-本目录只提供 **全局队列、定时器、命令式 API** 与 **`useToast`**，**不包含任何 UI**。业务系统可自行用 `Teleport`、组件库 `Message`、或完全自定义 DOM 来展示，实现视觉与交互自由化。
+本目录提供 **全局队列、定时器、命令式 API**、**`useToast`** 以及内置渲染层 **`HToastLayer`**。
 
-参考实现见仓库内 `src/view/toast/DemoToastLayer.tsx`（**不随 npm 包发布**，仅本地/文档用）。
+- **开箱即用**：在根组件挂载 `<HToastLayer />` 即可获得默认 Toast UI。
+- **自定义 UI**：也可不使用 `HToastLayer`，通过 `useToast()` 订阅队列后自行渲染。
 
 ## 从入口导入
 
@@ -85,6 +86,8 @@ const { toastList, closeToast } = useToast();
 | `types.ts` | 类型定义 |
 | `toastState.ts` | 单例队列、定时器、`pushToast` / `closeToast` / `clearToasts`、`useToast` |
 | `createToast.ts` | `createToast` 与默认 `toast` |
+| `HToastLayer.tsx` | 内置渲染层组件 |
+| `toast-layer.scss` | 内置渲染层样式 |
 | `index.ts` | 对外导出 |
 
 ---

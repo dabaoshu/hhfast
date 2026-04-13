@@ -23,3 +23,6 @@ export type { PushToastPayload, UseToastReturn } from './toastState';
 /** 命令式 API */
 export { createToast, toast } from './createToast';
 export type { ToastApi } from './createToast';
+
+/** 内置渲染层组件 */
+export { default as HToastLayer } from './HToastLayer';

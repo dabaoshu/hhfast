@@ -3,8 +3,7 @@
  * @description Playground 主入口：左侧菜单 + 右侧内容 + 全局 Layer
  */
 import { ref } from 'vue'
-import DemoToastLayer from './demos/toast/DemoToastLayer'
-import DemoModalLayer from './demos/modal/DemoModalLayer.vue'
+import { HConfigProvider } from '@/components/config-provider'
 import ToastDemo from './demos/toast/ToastDemo.vue'
 import ModalDemo from './demos/modal/ModalDemo.vue'
 import IconDemo from './demos/icon/IconDemo.vue'
@@ -33,10 +32,8 @@ const tabs = [
 </script>
 
 <template>
-  <DemoToastLayer />
-  <DemoModalLayer />
-
-  <div class="pg-layout">
+  <HConfigProvider>
+    <div class="pg-layout">
     <aside class="pg-sidebar">
       <div class="pg-logo">Hhfast UI</div>
       <nav class="pg-nav">
@@ -58,12 +55,12 @@ const tabs = [
         <component :is="tabs.find((t) => t.key === activeTab)?.comp" />
       </KeepAlive>
     </main>
-  </div>
+    </div>
+  </HConfigProvider>
 </template>
 
 <style>
 @import './styles/common.css';
-@import './demos/toast/toast-demo.scss';
 </style>
 
 <style scoped>
