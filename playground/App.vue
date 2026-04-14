@@ -14,8 +14,9 @@ import TooltipDemo from './demos/tooltip/TooltipDemo.vue'
 import SplitterDemo from './demos/splitter/SplitterDemo.vue'
 import PopoverDemo from './demos/popover/PopoverDemo.vue'
 import ResumableTransferDemo from './demos/resumable-transfer/ResumableTransferDemo.vue'
+import JsonToTreeDemo from './demos/json-to-tree/JsonToTreeDemo.vue'
 
-const activeTab = ref<'toast' | 'modal' | 'icon' | 'table' | 'backgroundTaskManager' | 'taskExecutionChain' | 'tooltip' | 'popover' | 'splitter' | 'resumableTransfer'>('popover')
+const activeTab = ref<'toast' | 'modal' | 'icon' | 'table' | 'backgroundTaskManager' | 'taskExecutionChain' | 'tooltip' | 'popover' | 'splitter' | 'resumableTransfer' | 'jsonToTree'>('jsonToTree')
 
 const tabs = [
   { key: 'toast', label: 'Toast', comp: ToastDemo },
@@ -28,6 +29,7 @@ const tabs = [
   { key: 'backgroundTaskManager', label: 'TaskManager', comp: BackgroundTaskManagerDemo },
   { key: 'taskExecutionChain', label: 'TaskChain', comp: TaskExecutionChainDemo },
   { key: 'resumableTransfer', label: 'Transfer', comp: ResumableTransferDemo },
+  { key: 'jsonToTree', label: 'JsonTree', comp: JsonToTreeDemo },
 ] as const
 </script>
 
