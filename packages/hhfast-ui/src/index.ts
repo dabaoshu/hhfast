@@ -34,6 +34,10 @@ export {
   HH_CONFIG_KEY,
 } from "./components/config-provider";
 
+/**
+ * 兼容导出：过渡期继续从 UI 包转发 core 能力。
+ * 新项目建议直接从 @nnnb/hhfast-utils 导入。
+ */
 export {
   BackgroundTaskManager,
   TaskScheduler,
@@ -50,9 +54,6 @@ export {
   readJson,
   writeJson,
   getWebStorage,
-} from "./core/background-task-manager";
-
-export {
   ChainDiffer,
   TraceAll,
   TaskExecutionChain,
@@ -66,9 +67,11 @@ export {
   getLastTraceResult,
   getTraceStepMetadata,
   runTracedFlow,
-} from "./core/task-execution-chain";
-
-export { jsonToTree } from "./core/json-to-tree";
+  jsonToTree,
+  ResumableTransfer,
+  LocalStorageTransferStore,
+  createLocalStorageTransferStore,
+} from "@nnnb/hhfast-utils";
 
 export type {
   ToastApi,
@@ -157,9 +160,6 @@ export type {
   TaskPersistenceOptions,
   StorageBackend,
   TaskHistoryOptions,
-} from "./core/background-task-manager";
-
-export type {
   AddTaskExecutionNodeOptions,
   CompleteTaskExecutionNodeOptions,
   ConnectTaskExecutionNodeOptions,
@@ -187,15 +187,24 @@ export type {
   ChainDifferOptions,
   EdgeDiff,
   NodeDiff,
-} from "./core/task-execution-chain";
-
-export * from "./core/resumable-transfer";
-
-export type {
   JsonTreeNode,
   JsonTreeValueType,
   JsonToTreeOptions,
-} from "./core/json-to-tree";
+  ChunkEventExtra,
+  ChunkSnapshot,
+  ChunkStatus,
+  ChunkTransferContext,
+  CreateTransferTaskOptions,
+  MergeFn,
+  ResumableTransferEventName,
+  ResumableTransferListener,
+  ResumableTransferOptions,
+  TransferFn,
+  TransferProgressStore,
+  TransferTaskPersistSnapshot,
+  TransferTaskSnapshot,
+  TransferTaskStatus,
+} from "@nnnb/hhfast-utils";
 
 /**
  * 全量注册：提供可注册组件与指令。

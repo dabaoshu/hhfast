@@ -1,0 +1,18 @@
+{
+  "name": "@nnnb/hhfast-playground",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "typecheck": "vue-tsc --noEmit"
+  },
+  "dependencies": {
+    "@nnnb/hhfast-ui": "workspace:*",
+    "@nnnb/hhfast-utils": "workspace:*",
+    "vue": "^3.5.13"
+  },
+  "devDependencies": {
+    "vue-tsc": "^2.2.0"
+  }
+}

@@ -1,0 +1,78 @@
+{
+  "name": "@nnnb/hhfast-ui",
+  "version": "0.0.1",
+  "description": "Vue 3 UI primitives with headless toast/modal.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./headless": {
+      "types": "./dist/headless.d.ts",
+      "import": "./dist/headless.js"
+    },
+    "./vue": {
+      "types": "./dist/vue.d.ts",
+      "import": "./dist/vue.js"
+    },
+    "./react": {
+      "types": "./dist/react.d.ts",
+      "import": "./dist/react.js"
+    },
+    "./index.css": "./dist/index.css"
+  },
+  "files": [
+    "dist/",
+    "package.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": [
+    "**/*.scss",
+    "**/*.css"
+  ],
+  "scripts": {
+    "build": "vite build",
+    "typecheck": "vue-tsc --noEmit",
+    "docs:api": "typedoc --options typedoc.json",
+    "docs:api:watch": "typedoc --options typedoc.json --watch"
+  },
+  "keywords": [
+    "vue",
+    "vue3",
+    "component-library",
+    "typescript",
+    "tailwind",
+    "hhfast-ui",
+    "table",
+    "toast",
+    "modal"
+  ],
+  "homepage": "https://github.com/nnnb/hhfast#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nnnb/hhfast.git"
+  },
+  "bugs": {
+    "url": "https://github.com/nnnb/hhfast/issues"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "vue": "^3.4.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "@nnnb/hhfast-utils": "workspace:*"
+  },
+  "devDependencies": {
+    "vue-tsc": "^2.2.0"
+  }
+}

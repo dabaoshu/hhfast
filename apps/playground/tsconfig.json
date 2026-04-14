@@ -1,0 +1,22 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "jsx": "preserve",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "types": ["vite/client"],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["../../packages/hhfast-ui/src/*"]
+    }
+  },
+  "include": ["./**/*.ts", "./**/*.tsx", "./**/*.vue", "./vite.config.ts"],
+  "references": [
+    {
+      "path": "../../packages/hhfast-ui"
+    },
+    {
+      "path": "../../packages/hhfast-utils"
+    }
+  ]
+}

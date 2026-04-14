@@ -5,7 +5,7 @@
  * 
  */
 
-import { delay } from "@/utils";
+import { delay } from "@nnnb/hhfast-utils";
 
 const customCache = new Map<string, string>();
 const fetchCache = new Set<string>();

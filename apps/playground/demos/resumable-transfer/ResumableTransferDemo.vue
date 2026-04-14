@@ -217,7 +217,7 @@ function statusClass(status: string): string {
     <h2>ResumableTransfer — File Upload</h2>
     <p class="pg-desc">
       真实文件断点续传演示。后端运行在 <code>localhost:3099</code>，
-      启动命令：<code>node playground_backend/server.mjs</code>
+      启动命令：<code>pnpm --filter @nnnb/hhfast-playground-backend dev</code>
     </p>
 
     <!-- 选择文件 -->

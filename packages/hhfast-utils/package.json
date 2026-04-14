@@ -1,0 +1,41 @@
+{
+  "name": "@nnnb/hhfast-utils",
+  "version": "0.0.1",
+  "description": "Core utilities for hhfast, framework agnostic.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./background-task-manager": {
+      "types": "./dist/core/background-task-manager/index.d.ts",
+      "import": "./dist/core/background-task-manager/index.js"
+    },
+    "./task-execution-chain": {
+      "types": "./dist/core/task-execution-chain/index.d.ts",
+      "import": "./dist/core/task-execution-chain/index.js"
+    },
+    "./resumable-transfer": {
+      "types": "./dist/core/resumable-transfer/index.d.ts",
+      "import": "./dist/core/resumable-transfer/index.js"
+    },
+    "./json-to-tree": {
+      "types": "./dist/core/json-to-tree/index.d.ts",
+      "import": "./dist/core/json-to-tree/index.js"
+    }
+  },
+  "files": [
+    "dist/",
+    "package.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "vite build",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  }
+}
