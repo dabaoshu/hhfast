@@ -1,0 +1,45 @@
+{
+  "skill_name": "hhfast-demo-sync",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "在 packages/hhfast-ui/src/components 里新增一个 color-picker 文件夹并实现基础组件，请你同步补齐 playground demo，包含新 demo 文件夹和 App.vue 菜单入口。",
+      "expected_output": "新增 apps/playground/demos/color-picker/ColorPickerDemo.vue，并在 apps/playground/App.vue 完成 import、tabs 注册和 activeTab 类型补充。",
+      "files": [
+        "packages/hhfast-ui/src/components",
+        "apps/playground/App.vue"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "我刚新增了 packages/hhfast-utils/src/core/flow-debugger，请自动补一个可视化 demo 到 playground，并确保能展示至少一个成功路径执行结果。",
+      "expected_output": "新增 apps/playground/demos/flow-debugger 目录和主 demo 页面，页面可触发 flow-debugger 的核心能力并展示结果。",
+      "files": [
+        "packages/hhfast-utils/src/core",
+        "apps/playground/demos"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "新增功能依赖 Node 文件系统，目录是 packages/hhfast-utils/src/core/report-export，请帮我同步 playground-backend 接口和前端 demo 调用页面。",
+      "expected_output": "更新 apps/playground-backend/server.mjs 新增接口，并在 apps/playground/demos/report-export 中提供前端调用 demo；同时把入口接入 App.vue。",
+      "files": [
+        "packages/hhfast-utils/src/core",
+        "apps/playground-backend/server.mjs",
+        "apps/playground/App.vue"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "请检查这次改动里新增了哪些功能文件夹，并自动补齐缺失 demo。要求输出映射关系、改动文件和验证结论。",
+      "expected_output": "输出新增目录到 demo 的映射清单，补齐缺失 demo 文件，并给出验证命令与关键结论。",
+      "files": [
+        "packages/hhfast-ui/src/components",
+        "packages/hhfast-ui/src/core",
+        "packages/hhfast-utils/src/core",
+        "apps/playground",
+        "apps/playground-backend"
+      ]
+    }
+  ]
+}
