@@ -68,6 +68,8 @@ export {
   runTracedFlow,
 } from "./core/task-execution-chain";
 
+export { jsonToTree } from "./core/json-to-tree";
+
 export type {
   ToastApi,
   ToastType,
@@ -188,6 +190,12 @@ export type {
 } from "./core/task-execution-chain";
 
 export * from "./core/resumable-transfer";
+
+export type {
+  JsonTreeNode,
+  JsonTreeValueType,
+  JsonToTreeOptions,
+} from "./core/json-to-tree";
 
 /**
  * 全量注册：提供可注册组件与指令。

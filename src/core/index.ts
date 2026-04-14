@@ -120,3 +120,8 @@ export type {
   TransferTaskSnapshot,
   TransferTaskStatus,
 } from './resumable-transfer'
+
+// JSON 转树
+export { jsonToTree } from './json-to-tree'
+
+export type { JsonTreeNode, JsonTreeValueType, JsonToTreeOptions } from './json-to-tree'
