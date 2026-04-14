@@ -59,33 +59,31 @@ interface OrderRunRecord {
 const sleep = async (ms: number): Promise<void> => {
   await new Promise(resolve => setTimeout(resolve, ms))
 }
+
+// 装饰器写法：@TraceAll 类装饰器自动追踪所有方法
+// @TraceEnter 标记入口方法，建立调用链
+// @TraceCall 标记外部调用步骤
+// @TraceVar 追踪类属性变化
+@TraceAll({
+  namePrefix: 'OrderServiceDemo',
+  exclude: ['createOrder', 'loadPicture', 'fetchUserAge'],
+})
 class OrderServiceDemo {
-  retryCount!: number
+  @TraceVar({ name: 'retryCount' })
+  retryCount = 0
+
   private statusValue = 'idle'
-
-  constructor() {
-    this.retryCount = 0
-  }
-
-  /**
-   * @description 可追踪属性 get。
-   */
-  get status(): string {
-    return this.statusValue
-  }
-
-  /**
-   * @description 可追踪属性 set。
-   * @param value 状态值。
-   */
-  set status(value: string) {
-    this.statusValue = value
-  }
+  get status(): string { return this.statusValue }
+  set status(value: string) { this.statusValue = value }
 
   /**
    * @description 入口：创建订单流程。
-   * @param input 订单入参。
    */
+  @TraceEnter<CreateOrderInput>({
+    name: '创建订单流程',
+    type: 'entry',
+    input: (args) => args[0] as CreateOrderInput,
+  })
   async createOrder(input: CreateOrderInput): Promise<OrderResult> {
     this.retryCount = this.retryCount + 1
     this.status = 'running'
@@ -112,12 +110,10 @@ class OrderServiceDemo {
     return `picture-${userId}`
   }
 
-
-
   /**
    * @description 外部函数调用封装为可追踪步骤。
-   * @param userId 用户 ID。
    */
+  @TraceCall({ name: 'external.getUserAge', type: 'external' })
   async fetchUserAge(userId: number): Promise<number> {
     await sleep(10)
     return 18
@@ -125,7 +121,6 @@ class OrderServiceDemo {
 
   /**
    * @description 自动方法追踪示例（由 TraceAll 接管）。
-   * @param age 年龄。
    */
   async calcDiscount(age: number): Promise<number> {
     await sleep(5)
@@ -134,7 +129,6 @@ class OrderServiceDemo {
 
   /**
    * @description 查询用户信息。
-   * @param userId 用户 ID。
    */
   async loadUser(userId: number): Promise<UserInfo> {
     await sleep(40)
@@ -143,7 +137,6 @@ class OrderServiceDemo {
 
   /**
    * @description 校验库存。
-   * @param skuId 商品 ID。
    */
   async checkStock(skuId: number): Promise<StockInfo> {
     await sleep(35)
@@ -152,8 +145,6 @@ class OrderServiceDemo {
 
   /**
    * @description 提交订单。
-   * @param user 用户信息。
-   * @param stock 库存信息。
    */
   async submitOrder(user: UserInfo, stock: StockInfo): Promise<OrderResult> {
     await sleep(25)
@@ -162,41 +153,7 @@ class OrderServiceDemo {
       orderId: `${user.id}-${stock.skuId}-${Date.now()}`,
     }
   }
-
-
 }
-
-TraceVar({
-  name: 'retryCount',
-})(OrderServiceDemo.prototype, 'retryCount')
-
-TraceAll({
-  namePrefix: 'OrderServiceDemo',
-  exclude: ['createOrder', 'logPicture', 'fetchUserAge'],
-})(OrderServiceDemo)
-
-const createOrderDescriptor = Object.getOwnPropertyDescriptor(OrderServiceDemo.prototype, 'createOrder')
-if (!createOrderDescriptor) {
-  throw new Error('createOrder descriptor not found.')
-}
-
-TraceEnter<CreateOrderInput>({
-  name: '创建订单流程',
-  type: 'entry',
-  input: (args) => (args[0] as CreateOrderInput),
-})(OrderServiceDemo.prototype, 'createOrder', createOrderDescriptor)
-Object.defineProperty(OrderServiceDemo.prototype, 'createOrder', createOrderDescriptor)
-
-
-const fetchUserAgeDescriptor = Object.getOwnPropertyDescriptor(OrderServiceDemo.prototype, 'fetchUserAge')
-if (!fetchUserAgeDescriptor) {
-  throw new Error('fetchUserAge descriptor not found.')
-}
-TraceCall({
-  name: 'external.getUserAge',
-  type: 'external',
-})(OrderServiceDemo.prototype, 'fetchUserAge', fetchUserAgeDescriptor)
-Object.defineProperty(OrderServiceDemo.prototype, 'fetchUserAge', fetchUserAgeDescriptor)
 
 const service = new OrderServiceDemo()
 /** 表单：执行入参与备注。 */

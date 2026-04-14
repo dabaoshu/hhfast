@@ -8,7 +8,9 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["../../packages/hhfast-ui/src/*"]
-    }
+    },
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
   },
   "include": ["./**/*.ts", "./**/*.tsx", "./**/*.vue", "./vite.config.ts"],
   "references": [
