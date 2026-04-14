@@ -3,36 +3,7 @@ import { computed, ref } from "vue";
 import { jsonToTree, type JsonLeafNodeMode, type JsonTreeNode } from "@/index";
 import TreeNodeItem from "./TreeNodeItem.vue";
 import TypeTreeNodeItem from "./TypeTreeNodeItem.vue";
-
-interface BusinessOutputItem {
-  key: string;
-  outputType: string;
-  fields: string;
-  label?: string;
-  schemas: string;
-  outputDesc: string;
-  fieldId: string;
-  level: number;
-  parentId: string;
-  linkId: string;
-  type?: string;
-  isRequired?: number;
-}
-
-interface RootObject {
-  key: string;
-  outputType: string;
-  fields: string;
-  label?: string;
-  schemas: string;
-  outputDesc: string;
-  fieldId: string;
-  level: number;
-  parentId: string;
-  linkId: string;
-  type?: string;
-  isRequired?: number;
-}
+import BusinessTypeOutputPanel from "./BusinessTypeOutputPanel.vue";
 
 const jsonInput = ref(`{
   "name": "hhfast",
@@ -51,109 +22,7 @@ const errorMessage = ref("");
 const treeResult = ref<JsonTreeNode | null>(null);
 const keepContainerValue = ref(false);
 const leafNodeMode = ref<JsonLeafNodeMode>("value");
-const businessOutput = ref<BusinessOutputItem[]>([]);
-
-let businessIdSeed = 0;
-
-/**
- * @description 生成业务节点唯一 ID，保证每次转换内部可追踪。
- */
-const createBusinessId = (): string => {
-  businessIdSeed += 1;
-  return `N${String(businessIdSeed).padStart(6, "0")}`;
-};
-
-/**
- * @description 将 jsonToTree 节点类型转换为业务 outputType 文案。
- * @param valueType jsonToTree 的值类型。
- */
-const toBusinessOutputType = (valueType: JsonTreeNode["valueType"]): string => {
-  switch (valueType) {
-    case "object":
-      return "Object";
-    case "array":
-      return "Array";
-    case "string":
-      return "String";
-    case "number":
-      return "Number";
-    case "boolean":
-      return "Boolean";
-    case "null":
-      return "Null";
-    case "undefined":
-      return "Undefined";
-    default:
-      return "Unknown";
-  }
-};
-
-/**
- * @description 递归拍平 jsonToTree 结果为业务所需数组结构。
- * @param node 当前树节点。
- * @param parentId 父节点 ID。
- * @param parentLinkId 父级链路 ID。
- * @param level 当前层级。
- * @param schemaTrail 父级 schema 轨迹。
- * @param result 收集输出数组。
- * @param isRoot 是否根节点。
- */
-const flattenBusinessOutput = (
-  node: JsonTreeNode,
-  parentId: string,
-  parentLinkId: string,
-  level: number,
-  schemaTrail: string[],
-  result: BusinessOutputItem[],
-  isRoot: boolean,
-): void => {
-  const fieldId = createBusinessId();
-  const outputType = toBusinessOutputType(node.valueType);
-  const currentSchemaTrail = [...schemaTrail, outputType];
-  const linkId = parentLinkId ? `${parentLinkId}-${fieldId}` : fieldId;
-
-  const item: BusinessOutputItem = {
-    key: node.label,
-    outputType,
-    fields: node.path,
-    schemas: currentSchemaTrail.join("."),
-    outputDesc: "",
-    fieldId,
-    level,
-    parentId,
-    linkId,
-  };
-
-  if (isRoot) {
-    item.label = "输出参数";
-    item.type = "paramsOutput";
-    item.isRequired = 0;
-  }
-
-  result.push(item);
-  node.children?.forEach((child) => {
-    flattenBusinessOutput(
-      child,
-      fieldId,
-      linkId,
-      level + 1,
-      currentSchemaTrail,
-      result,
-      false,
-    );
-  });
-};
-
-/**
- * @description 把 jsonToTree 结果转成业务扁平结构。
- * @param root 树根节点。
- */
-const convertTreeToBusinessOutput = (root: JsonTreeNode): BusinessOutputItem[] => {
-  businessIdSeed = 0;
-  const result: BusinessOutputItem[] = [];
-  flattenBusinessOutput(root, "", "", 1, [], result, true);
-  return result;
-};
+const parsedJson = ref<unknown>(undefined);
 
 /**
  * @description 将用户输入的 JSON 文本解析并转换为树结构。
@@ -162,21 +31,15 @@ const handleConvert = (): void => {
   errorMessage.value = "";
   try {
     const parsed = JSON.parse(jsonInput.value) as unknown;
+    parsedJson.value = parsed;
     treeResult.value = jsonToTree(parsed, {
       rootLabel: "json",
       keepRawValueOnContainer: keepContainerValue.value,
       leafNodeMode: leafNodeMode.value,
     });
-
-    console.log(treeResult.value, "treeResult.value");
-    
-    businessOutput.value = treeResult.value
-      ? convertTreeToBusinessOutput(treeResult.value)
-      : [];
   } catch (error) {
-    console.log(error);
+    parsedJson.value = undefined;
     treeResult.value = null;
-    businessOutput.value = [];
     errorMessage.value = error instanceof Error ? error.message : String(error);
   }
 };
@@ -331,11 +194,11 @@ handleConvert();
     </div>
 
     <div class="panel">
-      <h3 class="panel__title">业务结构结果（jsonToTree 转换）</h3>
+      <h3 class="panel__title">业务结构结果（类型节点直转）</h3>
       <p class="panel__sub-desc">
         该结果用于模拟输出参数配置：`key/outputType/fields/schemas/fieldId/parentId/linkId/level`。
       </p>
-      <pre class="business-output mono">{{ JSON.stringify(businessOutput, null, 2) }}</pre>
+      <BusinessTypeOutputPanel :source-data="parsedJson" />
     </div>
   </section>
 </template>
@@ -445,18 +308,6 @@ handleConvert();
   resize: vertical;
   font-size: 13px;
   line-height: 1.5;
-}
-
-.business-output {
-  margin: 0;
-  max-height: 320px;
-  overflow: auto;
-  border: 1px solid #f0f0f0;
-  border-radius: 8px;
-  background: #fafafa;
-  padding: 10px;
-  font-size: 12px;
-  line-height: 1.45;
 }
 
 .tree-wrap {

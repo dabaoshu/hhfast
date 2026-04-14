@@ -125,3 +125,25 @@ export type {
 export { jsonToTree } from './json-to-tree'
 
 export type { JsonTreeNode, JsonTreeValueType, JsonToTreeOptions } from './json-to-tree'
+
+// curl 转请求结构
+export {
+  tokenizeCurlCommand,
+  parseCurlTokens,
+  parseCurlCommand,
+  toFlatTableRows,
+  toSectionTables,
+} from './curl-to-request'
+
+export type {
+  CurlBodyType,
+  CurlExtraArg,
+  CurlHeaderItem,
+  CurlQueryItem,
+  CurlSectionTables,
+  CurlTableRow,
+  CurlTableValueType,
+  ParseCurlCommandOptions,
+  ParsedCurlBody,
+  ParsedCurlRequest,
+} from './curl-to-request'

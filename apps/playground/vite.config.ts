@@ -12,6 +12,10 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": resolve(__dirname, "../../packages/hhfast-ui/src"),
+      "@nnnb/hhfast-utils": resolve(
+        __dirname,
+        "../../packages/hhfast-utils/src/index.ts",
+      ),
     },
   },
   server: {

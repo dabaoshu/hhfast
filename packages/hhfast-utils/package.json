@@ -26,6 +26,10 @@
     "./json-to-tree": {
       "types": "./dist/core/json-to-tree/index.d.ts",
       "import": "./dist/core/json-to-tree/index.js"
+    },
+    "./curl-to-request": {
+      "types": "./dist/core/curl-to-request/index.d.ts",
+      "import": "./dist/core/curl-to-request/index.js"
     }
   },
   "files": [
