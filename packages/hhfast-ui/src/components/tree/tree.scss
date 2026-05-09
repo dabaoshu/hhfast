@@ -1,0 +1,68 @@
+.hh-tree {
+  border: 1px solid #e5e6eb;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.hh-tree__root,
+.hh-tree__children {
+  margin: 0;
+  padding: 8px 0;
+  list-style: none;
+}
+
+.hh-tree__item {
+  margin: 0;
+  padding: 0;
+}
+
+.hh-tree__node {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding-right: 10px;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.15s ease;
+}
+
+.hh-tree__node:hover {
+  background: #f7f8fa;
+}
+
+.hh-tree__node--active {
+  background: #e8f3ff;
+  color: #1677ff;
+}
+
+.hh-tree__toggle {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #666;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.hh-tree__toggle:hover {
+  background: #edf1f5;
+}
+
+.hh-tree__toggle--empty {
+  display: inline-block;
+  cursor: default;
+}
+
+.hh-tree__label {
+  font-size: 13px;
+}
+
+.hh-tree__empty {
+  padding: 14px 12px;
+  color: #999;
+  font-size: 13px;
+}

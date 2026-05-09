@@ -4,6 +4,7 @@ export * from "./components/popover";
 import { HTooltip, vTooltip } from "./components/tooltip";
 import { Splitter, SplitterPanel } from "./components/splitter";
 import { HConfigProvider } from "./components/config-provider";
+import { HTree } from "./components/tree";
 import "./styles/tailwind.css";
 
 export { toast, createToast, useToast, HToastLayer } from "./components/toast";
@@ -33,6 +34,8 @@ export {
   useHhConfig,
   HH_CONFIG_KEY,
 } from "./components/config-provider";
+
+export { HTree } from "./components/tree";
 
 /**
  * 兼容导出：过渡期继续从 UI 包转发 core 能力。
@@ -139,6 +142,17 @@ export type {
 } from "./components/config-provider";
 
 export type {
+  TreeDataMode,
+  TreeEmits,
+  TreeLeafSlotProps,
+  TreeNode,
+  TreeNonLeafSlotProps,
+  TreeProps,
+  TreeRawNode,
+  TreeSlots,
+} from "./components/tree";
+
+export type {
   BackgroundTask,
   BackgroundTaskManagerPlugin,
   BackgroundTaskManagerEventName,
@@ -216,6 +230,7 @@ export const HhfastUi: Plugin = {
     app.component("HSplitter", Splitter);
     app.component("HSplitterPanel", SplitterPanel);
     app.component("HConfigProvider", HConfigProvider);
+    app.component("HTree", HTree);
     app.directive("tooltip", vTooltip);
   },
 };

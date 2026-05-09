@@ -16,8 +16,10 @@ import PopoverDemo from './demos/popover/PopoverDemo.vue'
 import ResumableTransferDemo from './demos/resumable-transfer/ResumableTransferDemo.vue'
 import JsonToTreeDemo from './demos/json-to-tree/JsonToTreeDemo.vue'
 import CurlParserDemo from './demos/curl-parser/CurlParserDemo.vue'
+import WorksChainDemo from './demos/worksChain/WorksChainDemo.vue'
+import TreeDemo from './demos/tree/TreeDemo.vue'
 
-const activeTab = ref<'toast' | 'modal' | 'icon' | 'table' | 'backgroundTaskManager' | 'taskExecutionChain' | 'tooltip' | 'popover' | 'splitter' | 'resumableTransfer' | 'jsonToTree' | 'curlParser'>('curlParser')
+const activeTab = ref<'toast' | 'modal' | 'icon' | 'table' | 'backgroundTaskManager' | 'taskExecutionChain' | 'tooltip' | 'popover' | 'splitter' | 'resumableTransfer' | 'jsonToTree' | 'curlParser' | 'worksChain' | 'tree'>('worksChain')
 
 const tabs = [
   { key: 'toast', label: 'Toast', comp: ToastDemo },
@@ -32,6 +34,8 @@ const tabs = [
   { key: 'resumableTransfer', label: 'Transfer', comp: ResumableTransferDemo },
   { key: 'jsonToTree', label: 'JsonTree', comp: JsonToTreeDemo },
   { key: 'curlParser', label: 'CurlParser', comp: CurlParserDemo },
+  { key: 'worksChain', label: 'WorksChain', comp: WorksChainDemo },
+  { key: 'tree', label: 'Tree', comp: TreeDemo },
 ] as const
 </script>
 
