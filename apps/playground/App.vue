@@ -18,8 +18,9 @@ import JsonToTreeDemo from './demos/json-to-tree/JsonToTreeDemo.vue'
 import CurlParserDemo from './demos/curl-parser/CurlParserDemo.vue'
 import WorksChainDemo from './demos/worksChain/WorksChainDemo.vue'
 import TreeDemo from './demos/tree/TreeDemo.vue'
+import DrawerDemo from './demos/drawer/DrawerDemo.vue'
 
-const activeTab = ref<'toast' | 'modal' | 'icon' | 'table' | 'backgroundTaskManager' | 'taskExecutionChain' | 'tooltip' | 'popover' | 'splitter' | 'resumableTransfer' | 'jsonToTree' | 'curlParser' | 'worksChain' | 'tree'>('worksChain')
+const activeTab = ref<'toast' | 'modal' | 'icon' | 'table' | 'backgroundTaskManager' | 'taskExecutionChain' | 'tooltip' | 'popover' | 'splitter' | 'resumableTransfer' | 'jsonToTree' | 'curlParser' | 'worksChain' | 'tree' | 'drawer'>('worksChain')
 
 const tabs = [
   { key: 'toast', label: 'Toast', comp: ToastDemo },
@@ -36,6 +37,7 @@ const tabs = [
   { key: 'curlParser', label: 'CurlParser', comp: CurlParserDemo },
   { key: 'worksChain', label: 'WorksChain', comp: WorksChainDemo },
   { key: 'tree', label: 'Tree', comp: TreeDemo },
+  { key: 'drawer', label: 'Drawer', comp: DrawerDemo },
 ] as const
 </script>
 

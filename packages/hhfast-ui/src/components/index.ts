@@ -6,4 +6,5 @@ export * from "./tooltip";
 export * from "./splitter";
 export * from "./popover";
 export * from "./config-provider";
+export * from "./drawer";
 export * from "./tree";

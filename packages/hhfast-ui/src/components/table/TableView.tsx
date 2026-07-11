@@ -518,7 +518,7 @@ const HTable = defineComponent({
       ) : null
 
       return (
-        <div class={tableClass.join(' ')}>
+        <div class={tableClass.value.join(' ')}>
           <div class="hh-table__content" style={contentStyle.value}>
             <table class="hh-table__table">
               <thead>

@@ -4,6 +4,7 @@ export * from "./components/popover";
 import { HTooltip, vTooltip } from "./components/tooltip";
 import { Splitter, SplitterPanel } from "./components/splitter";
 import { HConfigProvider } from "./components/config-provider";
+import { HDrawer } from "./components/drawer";
 import { HTree } from "./components/tree";
 import "./styles/tailwind.css";
 
@@ -28,6 +29,8 @@ export { HTable, useTableState, normalizeTagList } from "./components/table";
 export { HTooltip, vTooltip } from "./components/tooltip";
 
 export { Splitter, SplitterPanel } from "./components/splitter";
+
+export { HDrawer } from "./components/drawer";
 
 export {
   HConfigProvider,
@@ -135,6 +138,11 @@ export type {
   SplitterEmits,
   SplitterPanelProps,
 } from "./components/splitter";
+
+export type {
+  DrawerPlacement,
+  DrawerProps,
+} from "./components/drawer";
 
 export type {
   HConfigProviderProps,
