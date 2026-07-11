@@ -38,6 +38,14 @@
     "README.md",
     "LICENSE"
   ],
+  "homepage": "https://github.com/nnnb/hhfast#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nnnb/hhfast.git"
+  },
+  "bugs": {
+    "url": "https://github.com/nnnb/hhfast/issues"
+  },
   "scripts": {
     "build": "vite build",
     "typecheck": "tsc -p tsconfig.json --noEmit"
