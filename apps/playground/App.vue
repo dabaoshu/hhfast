@@ -1,70 +1,95 @@
 <script setup lang="ts">
 /**
- * @description Playground 主入口：左侧菜单 + 右侧内容 + 全局 Layer
+ * @description Playground 主入口：左侧分组菜单 + 右侧内容 + 全局 Layer
  */
 import { ref } from 'vue'
 import { HConfigProvider } from '@/components/config-provider'
-import ToastDemo from './demos/toast/ToastDemo.vue'
-import ModalDemo from './demos/modal/ModalDemo.vue'
-import IconDemo from './demos/icon/IconDemo.vue'
-import TableDemo from './demos/table/TableDemo.vue'
-import BackgroundTaskManagerDemo from './demos/background-task-manager/BackgroundTaskManagerDemo.vue'
-import TaskExecutionChainDemo from './demos/task-execution-chain/TaskExecutionChainDemo.vue'
-import TooltipDemo from './demos/tooltip/TooltipDemo.vue'
-import SplitterDemo from './demos/splitter/SplitterDemo.vue'
-import PopoverDemo from './demos/popover/PopoverDemo.vue'
-import ResumableTransferDemo from './demos/resumable-transfer/ResumableTransferDemo.vue'
-import JsonToTreeDemo from './demos/json-to-tree/JsonToTreeDemo.vue'
-import CurlParserDemo from './demos/curl-parser/CurlParserDemo.vue'
-import WorksChainDemo from './demos/worksChain/WorksChainDemo.vue'
-import TreeDemo from './demos/tree/TreeDemo.vue'
-import DrawerDemo from './demos/drawer/DrawerDemo.vue'
+import ToastDemo from './demos/ui/toast/ToastDemo.vue'
+import ModalDemo from './demos/ui/modal/ModalDemo.vue'
+import IconDemo from './demos/ui/icon/IconDemo.vue'
+import TableDemo from './demos/ui/table/TableDemo.vue'
+import TooltipDemo from './demos/ui/tooltip/TooltipDemo.vue'
+import SplitterDemo from './demos/ui/splitter/SplitterDemo.vue'
+import PopoverDemo from './demos/ui/popover/PopoverDemo.vue'
+import TreeDemo from './demos/ui/tree/TreeDemo.vue'
+import DrawerDemo from './demos/ui/drawer/DrawerDemo.vue'
+import BackgroundTaskManagerDemo from './demos/utils/background-task-manager/BackgroundTaskManagerDemo.vue'
+import TaskExecutionChainDemo from './demos/utils/task-execution-chain/TaskExecutionChainDemo.vue'
+import ResumableTransferDemo from './demos/utils/resumable-transfer/ResumableTransferDemo.vue'
+import JsonToTreeDemo from './demos/utils/json-to-tree/JsonToTreeDemo.vue'
+import CurlParserDemo from './demos/utils/curl-parser/CurlParserDemo.vue'
+import WorksChainDemo from './demos/utils/worksChain/WorksChainDemo.vue'
 
-const activeTab = ref<'toast' | 'modal' | 'icon' | 'table' | 'backgroundTaskManager' | 'taskExecutionChain' | 'tooltip' | 'popover' | 'splitter' | 'resumableTransfer' | 'jsonToTree' | 'curlParser' | 'worksChain' | 'tree' | 'drawer'>('worksChain')
-
-const tabs = [
-  { key: 'toast', label: 'Toast', comp: ToastDemo },
-  { key: 'modal', label: 'Modal', comp: ModalDemo },
-  { key: 'icon', label: 'Icon', comp: IconDemo },
-  { key: 'table', label: 'Table', comp: TableDemo },
-  { key: 'tooltip', label: 'Tooltip', comp: TooltipDemo },
-  { key: 'popover', label: 'Popover', comp: PopoverDemo },
-  { key: 'splitter', label: 'Splitter', comp: SplitterDemo },
-  { key: 'backgroundTaskManager', label: 'TaskManager', comp: BackgroundTaskManagerDemo },
-  { key: 'taskExecutionChain', label: 'TaskChain', comp: TaskExecutionChainDemo },
-  { key: 'resumableTransfer', label: 'Transfer', comp: ResumableTransferDemo },
-  { key: 'jsonToTree', label: 'JsonTree', comp: JsonToTreeDemo },
-  { key: 'curlParser', label: 'CurlParser', comp: CurlParserDemo },
-  { key: 'worksChain', label: 'WorksChain', comp: WorksChainDemo },
-  { key: 'tree', label: 'Tree', comp: TreeDemo },
-  { key: 'drawer', label: 'Drawer', comp: DrawerDemo },
+const demoGroups = [
+  {
+    key: 'ui',
+    label: 'hhfast-ui',
+    tabs: [
+      { key: 'toast', label: 'Toast', comp: ToastDemo },
+      { key: 'modal', label: 'Modal', comp: ModalDemo },
+      { key: 'icon', label: 'Icon', comp: IconDemo },
+      { key: 'table', label: 'Table', comp: TableDemo },
+      { key: 'tooltip', label: 'Tooltip', comp: TooltipDemo },
+      { key: 'popover', label: 'Popover', comp: PopoverDemo },
+      { key: 'splitter', label: 'Splitter', comp: SplitterDemo },
+      { key: 'tree', label: 'Tree', comp: TreeDemo },
+      { key: 'drawer', label: 'Drawer', comp: DrawerDemo },
+    ],
+  },
+  {
+    key: 'utils',
+    label: 'hhfast-utils',
+    tabs: [
+      { key: 'backgroundTaskManager', label: 'TaskManager', comp: BackgroundTaskManagerDemo },
+      { key: 'taskExecutionChain', label: 'TaskChain', comp: TaskExecutionChainDemo },
+      { key: 'resumableTransfer', label: 'Transfer', comp: ResumableTransferDemo },
+      { key: 'jsonToTree', label: 'JsonTree', comp: JsonToTreeDemo },
+      { key: 'curlParser', label: 'CurlParser', comp: CurlParserDemo },
+      { key: 'worksChain', label: 'WorksChain', comp: WorksChainDemo },
+    ],
+  },
 ] as const
+
+type DemoTabKey = (typeof demoGroups)[number]['tabs'][number]['key']
+
+const activeTab = ref<DemoTabKey>('worksChain')
+
+const allTabs = demoGroups.flatMap((group) => group.tabs)
+
+const activeDemo = () => allTabs.find((tab) => tab.key === activeTab.value)?.comp
 </script>
 
 <template>
   <HConfigProvider>
     <div class="pg-layout">
-    <aside class="pg-sidebar">
-      <div class="pg-logo">Hhfast UI</div>
-      <nav class="pg-nav">
-        <button
-          v-for="tab in tabs"
-          :key="tab.key"
-          type="button"
-          class="pg-nav-item"
-          :class="{ 'pg-nav-item--active': activeTab === tab.key }"
-          @click="activeTab = tab.key"
-        >
-          {{ tab.label }}
-        </button>
-      </nav>
-    </aside>
+      <aside class="pg-sidebar">
+        <div class="pg-logo">Hhfast Playground</div>
+        <nav class="pg-nav">
+          <section
+            v-for="group in demoGroups"
+            :key="group.key"
+            class="pg-nav-group"
+          >
+            <div class="pg-nav-group-title">{{ group.label }}</div>
+            <button
+              v-for="tab in group.tabs"
+              :key="tab.key"
+              type="button"
+              class="pg-nav-item"
+              :class="{ 'pg-nav-item--active': activeTab === tab.key }"
+              @click="activeTab = tab.key"
+            >
+              {{ tab.label }}
+            </button>
+          </section>
+        </nav>
+      </aside>
 
-    <main class="pg-main">
-      <KeepAlive>
-        <component :is="tabs.find((t) => t.key === activeTab)?.comp" />
-      </KeepAlive>
-    </main>
+      <main class="pg-main">
+        <KeepAlive>
+          <component :is="activeDemo()" />
+        </KeepAlive>
+      </main>
     </div>
   </HConfigProvider>
 </template>
@@ -97,10 +122,10 @@ const tabs = [
 
 .pg-logo {
   padding: 20px 20px 16px;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
   color: #1677ff;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
   border-bottom: 1px solid #f0f0f0;
 }
 
@@ -108,9 +133,24 @@ const tabs = [
   display: flex;
   flex-direction: column;
   padding: 8px;
-  gap: 2px;
+  gap: 12px;
   overflow-y: auto;
   flex: 1;
+}
+
+.pg-nav-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pg-nav-group-title {
+  padding: 4px 12px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: #999;
 }
 
 .pg-nav-item {
