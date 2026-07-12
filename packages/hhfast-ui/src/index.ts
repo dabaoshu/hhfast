@@ -77,6 +77,9 @@ export {
   ResumableTransfer,
   LocalStorageTransferStore,
   createLocalStorageTransferStore,
+  computeFileMd5,
+  computeFileMd5OnMainThread,
+  SparkMD5,
 } from "@nnnb/hhfast-utils";
 
 export type {
@@ -226,6 +229,8 @@ export type {
   TransferTaskPersistSnapshot,
   TransferTaskSnapshot,
   TransferTaskStatus,
+  ComputeFileMd5Options,
+  FileMd5Progress,
 } from "@nnnb/hhfast-utils";
 
 /**

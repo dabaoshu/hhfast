@@ -2,8 +2,9 @@
  * 断点续传后端服务
  *
  * 接口：
+ *   POST /upload/check   — 按 MD5 查询是否可秒传
  *   POST /upload/chunk   — 上传单个分片（multipart: file + taskId + index + totalChunks + filename）
- *   POST /upload/merge   — 合并所有分片（json: taskId, filename, totalChunks）
+ *   POST /upload/merge   — 合并所有分片（json: taskId, filename, totalChunks, md5?）
  *   GET  /upload/status/:taskId — 查询已上传分片列表
  *   DELETE /upload/:taskId      — 清理分片临时文件
  *
@@ -13,14 +14,43 @@
 import http from 'node:http'
 import fs from 'node:fs'
 import path from 'node:path'
-import { pipeline } from 'node:stream/promises'
-import { randomUUID } from 'node:crypto'
+import { createHash } from 'node:crypto'
 
 const PORT = 3099
 const UPLOAD_DIR = path.resolve('uploads')
+const MD5_INDEX_PATH = path.join(UPLOAD_DIR, 'md5-index.json')
 
 // 确保上传目录存在
 fs.mkdirSync(UPLOAD_DIR, { recursive: true })
+
+/** @type {Map<string, { filename: string, size: number, path: string }>} */
+const md5Index = loadMd5Index()
+
+/** 从磁盘加载 MD5 索引。 */
+function loadMd5Index() {
+  try {
+    if (!fs.existsSync(MD5_INDEX_PATH)) return new Map()
+    const raw = fs.readFileSync(MD5_INDEX_PATH, 'utf8')
+    const parsed = JSON.parse(raw)
+    if (!parsed || typeof parsed !== 'object') return new Map()
+    return new Map(Object.entries(parsed))
+  } catch {
+    return new Map()
+  }
+}
+
+/** 持久化 MD5 索引。 */
+function saveMd5Index() {
+  const obj = Object.fromEntries(md5Index.entries())
+  fs.writeFileSync(MD5_INDEX_PATH, JSON.stringify(obj, null, 2), 'utf8')
+}
+
+/** 计算文件 MD5。 */
+function hashFileMd5(filePath) {
+  const hash = createHash('md5')
+  hash.update(fs.readFileSync(filePath))
+  return hash.digest('hex')
+}
 
 /** 获取某个 taskId 的临时分片目录。 */
 function chunkDir(taskId) {
@@ -116,6 +146,38 @@ function json(res, status, data) {
 
 // ─── 路由处理 ──────────────────────────────────────────
 
+async function handleUploadCheck(req, res) {
+  const body = await readJsonBody(req)
+  const { md5, size, filename } = body
+
+  if (!md5 || typeof md5 !== 'string') {
+    return json(res, 400, { error: 'Missing md5' })
+  }
+
+  const normalizedMd5 = md5.toLowerCase()
+  const hit = md5Index.get(normalizedMd5)
+
+  if (!hit || !fs.existsSync(hit.path)) {
+    if (hit) md5Index.delete(normalizedMd5)
+    return json(res, 200, { exists: false, md5: normalizedMd5 })
+  }
+
+  if (size != null && Number(size) !== hit.size) {
+    return json(res, 200, { exists: false, md5: normalizedMd5, reason: 'size-mismatch' })
+  }
+
+  console.log(`[check] md5 hit: ${normalizedMd5} file=${hit.filename}`)
+  json(res, 200, {
+    exists: true,
+    md5: normalizedMd5,
+    file: {
+      filename: filename ?? hit.filename,
+      size: hit.size,
+      path: hit.path,
+    },
+  })
+}
+
 async function handleUploadChunk(req, res) {
   const { fields, file } = await parseMultipart(req)
   const { taskId, index, totalChunks, filename } = fields
@@ -136,7 +198,7 @@ async function handleUploadChunk(req, res) {
 
 async function handleUploadMerge(req, res) {
   const body = await readJsonBody(req)
-  const { taskId, filename, totalChunks } = body
+  const { taskId, filename, totalChunks, md5 } = body
 
   if (!taskId || !filename) {
     return json(res, 400, { error: 'Missing taskId / filename' })
@@ -164,12 +226,37 @@ async function handleUploadMerge(req, res) {
 
   await new Promise((resolve) => writeStream.on('finish', resolve))
 
+  const stat = fs.statSync(outputPath)
+  const serverMd5 = hashFileMd5(outputPath)
+
+  if (md5 && typeof md5 === 'string' && md5.toLowerCase() !== serverMd5) {
+    fs.rmSync(outputPath, { force: true })
+    return json(res, 400, {
+      error: 'MD5 mismatch after merge',
+      expected: md5.toLowerCase(),
+      actual: serverMd5,
+    })
+  }
+
+  md5Index.set(serverMd5, {
+    filename: safeName,
+    size: stat.size,
+    path: outputPath,
+  })
+  saveMd5Index()
+
   // 清理分片目录
   fs.rmSync(dir, { recursive: true, force: true })
 
-  const stat = fs.statSync(outputPath)
-  console.log(`[merge] taskId=${taskId} file=${safeName} size=${stat.size}`)
-  json(res, 200, { ok: true, filename: safeName, size: stat.size, path: outputPath })
+  console.log(`[merge] taskId=${taskId} file=${safeName} size=${stat.size} md5=${serverMd5}`)
+  json(res, 200, {
+    ok: true,
+    filename: safeName,
+    size: stat.size,
+    path: outputPath,
+    md5: serverMd5,
+    verified: Boolean(md5),
+  })
 }
 
 async function handleUploadStatus(req, res, taskId) {
@@ -208,6 +295,10 @@ const server = http.createServer(async (req, res) => {
   const pathname = url.pathname
 
   try {
+    // POST /upload/check
+    if (req.method === 'POST' && pathname === '/upload/check') {
+      return await handleUploadCheck(req, res)
+    }
     // POST /upload/chunk
     if (req.method === 'POST' && pathname === '/upload/chunk') {
       return await handleUploadChunk(req, res)
@@ -237,6 +328,7 @@ const server = http.createServer(async (req, res) => {
 server.listen(PORT, () => {
   console.log(`\n  Resumable upload server running at http://localhost:${PORT}\n`)
   console.log(`  Endpoints:`)
+  console.log(`    POST   /upload/check          Check instant upload by MD5`)
   console.log(`    POST   /upload/chunk          Upload a chunk`)
   console.log(`    POST   /upload/merge          Merge all chunks`)
   console.log(`    GET    /upload/status/:taskId  Query uploaded chunks`)
