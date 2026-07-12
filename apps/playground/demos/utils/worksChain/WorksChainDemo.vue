@@ -18,19 +18,14 @@ import {
   TraceVar,
   createTraceVariable,
   getLastTraceResult,
+  jsonToTree,
+  parseCurlCommand,
+  toFlatTableRows,
   type ChainDiffResult,
   type TaskExecutionEdge,
   type TaskExecutionNode,
   type TaskExecutionRenderResult,
-} from '@/index' 
-
-// 装饰器写法示例（Class & Method & Property 装饰器）
-// 注意：需在 tsconfig.json 中开启 experimentalDecorators: true  
-// 并配置 @babel/plugin-proposal-decorators (legacy 模式)
-import { jsonToTree, type JsonTreeNode } from '@/index'
-import {
-  parseCurlCommand,
-  toFlatTableRows,
+  type JsonTreeNode,
   type ParsedCurlRequest,
   type CurlTableRow,
 } from '@nnnb/hhfast-utils'

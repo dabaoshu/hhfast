@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "pnpm --filter @nnnb/hhfast-playground dev",
     "dev:backend": "pnpm --filter @nnnb/hhfast-playground-backend dev",
+    "build:playground": "pnpm --filter @nnnb/hhfast-playground build",
     "build": "pnpm -r --filter ./packages/** build",
     "build:ui": "pnpm --filter @nnnb/hhfast-ui build",
     "build:utils": "pnpm --filter @nnnb/hhfast-utils build",

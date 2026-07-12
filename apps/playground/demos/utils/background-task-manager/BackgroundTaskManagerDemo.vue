@@ -7,7 +7,7 @@ import {
   createTaskSnapshotStore,
   type BackgroundTask,
   type BackgroundTaskManagerPlugin,
-} from '@/index'
+} from '@nnnb/hhfast-utils'
 
 type DemoTaskType = 'file:upload' | 'job:report'
 

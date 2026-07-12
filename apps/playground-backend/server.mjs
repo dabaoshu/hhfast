@@ -16,7 +16,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { createHash } from 'node:crypto'
 
-const PORT = 3099
+const PORT = Number(process.env.PORT) || 3099
 const UPLOAD_DIR = path.resolve('uploads')
 const MD5_INDEX_PATH = path.join(UPLOAD_DIR, 'md5-index.json')
 
@@ -295,6 +295,10 @@ const server = http.createServer(async (req, res) => {
   const pathname = url.pathname
 
   try {
+    // GET /health — Render 健康检查
+    if (req.method === 'GET' && pathname === '/health') {
+      return json(res, 200, { ok: true })
+    }
     // POST /upload/check
     if (req.method === 'POST' && pathname === '/upload/check') {
       return await handleUploadCheck(req, res)

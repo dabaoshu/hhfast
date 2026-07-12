@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { JsonTreeNode } from '@/index'
+import type { JsonTreeNode } from '@nnnb/hhfast-utils'
 
 defineOptions({
   name: 'TypeTreeNodeItem',

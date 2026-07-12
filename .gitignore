@@ -3,3 +3,7 @@ dist
 docs/api/
 docs/api.json
 .worktrees/
+packages/hhfast-utils/tsconfig.tsbuildinfo
+packages/hhfast-ui/tsconfig.tsbuildinfo
+apps/playground/tsconfig.tsbuildinfo
+apps/playground-backend/uploads/

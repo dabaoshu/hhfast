@@ -40,48 +40,6 @@ export {
 
 export { HTree } from "./components/tree";
 
-/**
- * 兼容导出：过渡期继续从 UI 包转发 core 能力。
- * 新项目建议直接从 @nnnb/hhfast-utils 导入。
- */
-export {
-  BackgroundTaskManager,
-  TaskScheduler,
-  TaskHistoryStore,
-  TaskHistoryManager,
-  createTaskSnapshotStore,
-  createTaskPersistenceAdapter,
-  createTaskHistoryStore,
-  createTaskStorage,
-  createTaskPersistencePlugin,
-  restorePendingFromPersistence,
-  restorePendingFromSnapshots,
-  IndexedDBAdapter,
-  readJson,
-  writeJson,
-  getWebStorage,
-  ChainDiffer,
-  TraceAll,
-  TaskExecutionChain,
-  TaskExecutionStackTracer,
-  TraceCall,
-  TraceEnter,
-  TraceStep,
-  TraceVar,
-  createTraceVariable,
-  createStackTracer,
-  getLastTraceResult,
-  getTraceStepMetadata,
-  runTracedFlow,
-  jsonToTree,
-  ResumableTransfer,
-  LocalStorageTransferStore,
-  createLocalStorageTransferStore,
-  computeFileMd5,
-  computeFileMd5OnMainThread,
-  SparkMD5,
-} from "@nnnb/hhfast-utils";
-
 export type {
   ToastApi,
   ToastType,
@@ -142,10 +100,7 @@ export type {
   SplitterPanelProps,
 } from "./components/splitter";
 
-export type {
-  DrawerPlacement,
-  DrawerProps,
-} from "./components/drawer";
+export type { DrawerPlacement, DrawerProps } from "./components/drawer";
 
 export type {
   HConfigProviderProps,
@@ -162,76 +117,6 @@ export type {
   TreeRawNode,
   TreeSlots,
 } from "./components/tree";
-
-export type {
-  BackgroundTask,
-  BackgroundTaskManagerPlugin,
-  BackgroundTaskManagerEventName,
-  BackgroundTaskManagerListener,
-  BackgroundTaskManagerOptions,
-  BackgroundTaskStatus,
-  EnqueueTaskOptions,
-  TaskExecuteContext,
-  TaskExecutor,
-  TaskStorageBackend,
-  TaskSnapshotStoreOptions,
-  TaskHistoryStoreOptions,
-  TaskStorageBundleOptions,
-  TaskSnapshotStore,
-  TaskHistoryEntry,
-  TaskHistoryStats,
-  TaskHistoryQuery,
-  TaskPersistenceAdapter,
-  TaskPersistenceOptions,
-  StorageBackend,
-  TaskHistoryOptions,
-  AddTaskExecutionNodeOptions,
-  CompleteTaskExecutionNodeOptions,
-  ConnectTaskExecutionNodeOptions,
-  FailTaskExecutionNodeOptions,
-  TaskExecutionEdge,
-  TaskExecutionMermaidOptions,
-  TaskExecutionNode,
-  TaskExecutionNodeStatus,
-  TaskExecutionRenderResult,
-  RunTracedFlowOptions,
-  TraceStepMetadata,
-  TraceStepOptions,
-  TracedFlowExecuteResult,
-  TracedFlowRunContext,
-  StackTraceExecuteOptions,
-  StackTraceRunContext,
-  StackTraceStepOptions,
-  TraceAllOptions,
-  TraceCallOptions,
-  TraceEnterExecuteResult,
-  TraceEnterOptions,
-  TraceVarOptions,
-  TracedVariable,
-  ChainDiffResult,
-  ChainDifferOptions,
-  EdgeDiff,
-  NodeDiff,
-  JsonTreeNode,
-  JsonTreeValueType,
-  JsonToTreeOptions,
-  ChunkEventExtra,
-  ChunkSnapshot,
-  ChunkStatus,
-  ChunkTransferContext,
-  CreateTransferTaskOptions,
-  MergeFn,
-  ResumableTransferEventName,
-  ResumableTransferListener,
-  ResumableTransferOptions,
-  TransferFn,
-  TransferProgressStore,
-  TransferTaskPersistSnapshot,
-  TransferTaskSnapshot,
-  TransferTaskStatus,
-  ComputeFileMd5Options,
-  FileMd5Progress,
-} from "@nnnb/hhfast-utils";
 
 /**
  * 全量注册：提供可注册组件与指令。

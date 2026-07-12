@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import { jsonToTree, type JsonLeafNodeMode, type JsonTreeNode } from "@/index";
+import { jsonToTree, type JsonLeafNodeMode, type JsonTreeNode } from '@nnnb/hhfast-utils'
 import TreeNodeItem from "./TreeNodeItem.vue";
 import TypeTreeNodeItem from "./TypeTreeNodeItem.vue";
 import BusinessTypeOutputPanel from "./BusinessTypeOutputPanel.vue";

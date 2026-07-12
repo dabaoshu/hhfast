@@ -5,10 +5,14 @@ import tailwindcss from "@tailwindcss/vite";
 import vitePluginBabel from "vite-plugin-babel";
 import { resolve } from "node:path";
 
+/** GitHub Pages 项目站 base，仓库名为 hhfast 时为 /hhfast/ */
+const pagesBase = process.env.GITHUB_PAGES === "true" ? "/hhfast/" : "/";
+
 /**
  * Playground 应用模式构建配置。
  */
 export default defineConfig({
+  base: pagesBase,
   plugins: [
     tailwindcss(),
     vue(),

@@ -11,9 +11,10 @@ import {
   type TransferProgressStore,
   type TransferTaskPersistSnapshot,
   type FileMd5Progress,
-} from '@/index'
+} from '@nnnb/hhfast-utils'
 
-const API_BASE = 'http://localhost:3099'
+/** 上传 API；生产构建通过 VITE_API_BASE 指向 Render 等服务 */
+const API_BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:3099'
 const CHUNK_SIZE = 2 * 1024 * 1024 // 2MB per chunk
 const UPLOAD_RECORDS_KEY = 'hhfast-resumable-transfer-upload-records'
 
@@ -732,8 +733,8 @@ function statusClass(status: string): string {
     <h2>ResumableTransfer — File Upload</h2>
     <p class="pg-desc">
       真实文件断点续传演示。上传前在 <strong>Web Worker</strong> 中计算整文件 MD5，用于秒传查重与合并后校验。
-      后端运行在 <code>localhost:3099</code>，
-      启动命令：<code>pnpm --filter @nnnb/hhfast-playground-backend dev</code>
+      上传 API：<code>{{ API_BASE }}</code>。
+      本地后端：<code>pnpm --filter @nnnb/hhfast-playground-backend dev</code>
     </p>
 
     <!-- 选择文件 -->

@@ -1,0 +1,22 @@
+# Render Blueprint：playground 断点续传后端
+# 文档：https://render.com/docs/blueprint-spec
+#
+# 部署步骤：
+# 1. 登录 https://dashboard.render.com → New → Blueprint
+# 2. 连接 GitHub 仓库 dabaoshu/hhfast
+# 3. 应用本文件后获得 API 地址，例如 https://hhfast-playground-api.onrender.com
+# 4. 在 GitHub 仓库 Settings → Secrets and variables → Actions → Variables
+#    添加 PLAYGROUND_API_BASE = 上一步的 HTTPS 根地址（无尾斜杠）
+
+services:
+  - type: web
+    name: hhfast-playground-api
+    runtime: node
+    rootDir: apps/playground-backend
+    buildCommand: ""
+    startCommand: node server.mjs
+    healthCheckPath: /health
+    plan: free
+    envVars:
+      - key: NODE_ENV
+        value: production

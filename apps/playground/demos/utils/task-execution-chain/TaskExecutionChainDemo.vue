@@ -13,7 +13,7 @@ import {
   type TaskExecutionEdge,
   type TaskExecutionNode,
   type TaskExecutionRenderResult,
-} from '@/index'
+} from '@nnnb/hhfast-utils'
 
 interface CreateOrderInput {
   userId: number
