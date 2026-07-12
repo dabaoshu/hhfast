@@ -1,69 +1,17 @@
 <script setup lang="ts">
 /**
- * @description Playground 主入口：左侧分组菜单 + 右侧内容 + 全局 Layer
+ * @description Playground 主布局：左侧分组菜单 + 路由内容区
  */
-import { ref } from 'vue'
+import { RouterLink, RouterView } from 'vue-router'
 import { HConfigProvider } from '@/components/config-provider'
-import ToastDemo from './demos/ui/toast/ToastDemo.vue'
-import ModalDemo from './demos/ui/modal/ModalDemo.vue'
-import IconDemo from './demos/ui/icon/IconDemo.vue'
-import TableDemo from './demos/ui/table/TableDemo.vue'
-import TooltipDemo from './demos/ui/tooltip/TooltipDemo.vue'
-import SplitterDemo from './demos/ui/splitter/SplitterDemo.vue'
-import PopoverDemo from './demos/ui/popover/PopoverDemo.vue'
-import TreeDemo from './demos/ui/tree/TreeDemo.vue'
-import DrawerDemo from './demos/ui/drawer/DrawerDemo.vue'
-import BackgroundTaskManagerDemo from './demos/utils/background-task-manager/BackgroundTaskManagerDemo.vue'
-import TaskExecutionChainDemo from './demos/utils/task-execution-chain/TaskExecutionChainDemo.vue'
-import ResumableTransferDemo from './demos/utils/resumable-transfer/ResumableTransferDemo.vue'
-import JsonToTreeDemo from './demos/utils/json-to-tree/JsonToTreeDemo.vue'
-import CurlParserDemo from './demos/utils/curl-parser/CurlParserDemo.vue'
-import WorksChainDemo from './demos/utils/worksChain/WorksChainDemo.vue'
-
-const demoGroups = [
-  {
-    key: 'ui',
-    label: 'hhfast-ui',
-    tabs: [
-      { key: 'toast', label: 'Toast', comp: ToastDemo },
-      { key: 'modal', label: 'Modal', comp: ModalDemo },
-      { key: 'icon', label: 'Icon', comp: IconDemo },
-      { key: 'table', label: 'Table', comp: TableDemo },
-      { key: 'tooltip', label: 'Tooltip', comp: TooltipDemo },
-      { key: 'popover', label: 'Popover', comp: PopoverDemo },
-      { key: 'splitter', label: 'Splitter', comp: SplitterDemo },
-      { key: 'tree', label: 'Tree', comp: TreeDemo },
-      { key: 'drawer', label: 'Drawer', comp: DrawerDemo },
-    ],
-  },
-  {
-    key: 'utils',
-    label: 'hhfast-utils',
-    tabs: [
-      { key: 'backgroundTaskManager', label: 'TaskManager', comp: BackgroundTaskManagerDemo },
-      { key: 'taskExecutionChain', label: 'TaskChain', comp: TaskExecutionChainDemo },
-      { key: 'resumableTransfer', label: 'Transfer', comp: ResumableTransferDemo },
-      { key: 'jsonToTree', label: 'JsonTree', comp: JsonToTreeDemo },
-      { key: 'curlParser', label: 'CurlParser', comp: CurlParserDemo },
-      { key: 'worksChain', label: 'WorksChain', comp: WorksChainDemo },
-    ],
-  },
-] as const
-
-type DemoTabKey = (typeof demoGroups)[number]['tabs'][number]['key']
-
-const activeTab = ref<DemoTabKey>('worksChain')
-
-const allTabs = demoGroups.flatMap((group) => group.tabs)
-
-const activeDemo = () => allTabs.find((tab) => tab.key === activeTab.value)?.comp
+import { demoGroups, demoRoutePath } from './router'
 </script>
 
 <template>
   <HConfigProvider>
     <div class="pg-layout">
       <aside class="pg-sidebar">
-        <div class="pg-logo">Hhfast Playground</div>
+        <RouterLink class="pg-logo" to="/">Hhfast Playground</RouterLink>
         <nav class="pg-nav">
           <section
             v-for="group in demoGroups"
@@ -71,24 +19,25 @@ const activeDemo = () => allTabs.find((tab) => tab.key === activeTab.value)?.com
             class="pg-nav-group"
           >
             <div class="pg-nav-group-title">{{ group.label }}</div>
-            <button
-              v-for="tab in group.tabs"
-              :key="tab.key"
-              type="button"
+            <RouterLink
+              v-for="demo in group.demos"
+              :key="demo.path"
+              :to="demoRoutePath(group.basePath, demo.path)"
               class="pg-nav-item"
-              :class="{ 'pg-nav-item--active': activeTab === tab.key }"
-              @click="activeTab = tab.key"
+              active-class="pg-nav-item--active"
             >
-              {{ tab.label }}
-            </button>
+              {{ demo.label }}
+            </RouterLink>
           </section>
         </nav>
       </aside>
 
       <main class="pg-main">
-        <KeepAlive>
-          <component :is="activeDemo()" />
-        </KeepAlive>
+        <RouterView v-slot="{ Component }">
+          <KeepAlive>
+            <component :is="Component" />
+          </KeepAlive>
+        </RouterView>
       </main>
     </div>
   </HConfigProvider>
@@ -121,12 +70,14 @@ const activeDemo = () => allTabs.find((tab) => tab.key === activeTab.value)?.com
 }
 
 .pg-logo {
+  display: block;
   padding: 20px 20px 16px;
   font-size: 15px;
   font-weight: 700;
   color: #1677ff;
   letter-spacing: 0.3px;
   border-bottom: 1px solid #f0f0f0;
+  text-decoration: none;
 }
 
 .pg-nav {
@@ -166,6 +117,7 @@ const activeDemo = () => allTabs.find((tab) => tab.key === activeTab.value)?.com
   color: #555;
   cursor: pointer;
   transition: all 0.15s;
+  text-decoration: none;
 }
 
 .pg-nav-item:hover {
