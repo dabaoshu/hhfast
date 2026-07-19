@@ -9,6 +9,8 @@
     "build": "pnpm -r --filter ./packages/** build",
     "build:ui": "pnpm --filter @nnnb/hhfast-ui build",
     "build:utils": "pnpm --filter @nnnb/hhfast-utils build",
+    "test": "pnpm -r --filter ./packages/** --if-present test",
+    "test:utils": "pnpm --filter @nnnb/hhfast-utils test",
     "typecheck": "pnpm -r --filter ./packages/** typecheck",
     "typecheck:ui": "pnpm --filter @nnnb/hhfast-ui typecheck",
     "typecheck:utils": "pnpm --filter @nnnb/hhfast-utils typecheck",
