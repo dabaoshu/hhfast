@@ -7,6 +7,7 @@ import {
   watchEffect,
   onMounted,
   onBeforeUnmount,
+  isVNode,
   type PropType,
 } from 'vue'
 import type { CSSProperties } from 'vue'
@@ -77,6 +78,9 @@ const CellContent = defineComponent({
     return () => {
       if (innerProps.content == null || innerProps.content === '') {
         return <span>-</span>
+      }
+      if (isVNode(innerProps.content)) {
+        return innerProps.content
       }
       if (Array.isArray(innerProps.content)) {
         return innerProps.content as unknown as JSX.Element

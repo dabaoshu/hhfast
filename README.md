@@ -41,6 +41,9 @@ pnpm add vue@^3.4
 | `HTooltip` | 文字提示 |
 | `HSplitter` / `HSplitterPanel` | 分割面板 |
 | `HPopover` | 气泡卡片 |
+| `HDrawer` | 抽屉 |
+| `HConfigProvider` | 全局配置 |
+| `HTree` | 树 |
 | `v-tooltip` | Tooltip 指令（`app.directive('tooltip', …)`） |
 
 ```ts
@@ -113,6 +116,9 @@ pnpm run typecheck:utils
 pnpm run release:ui
 pnpm run release:utils
 
+# 完整发布门禁：测试、类型、构建、Playground E2E、tarball 消费验证
+pnpm run release:check
+
 # 单模块发布到 npm
 pnpm run publish:ui
 pnpm run publish:utils
@@ -121,21 +127,23 @@ pnpm run publish:utils
 ### 推荐发布流程
 
 ```bash
-# 1) 仅为目标模块升级版本号（会进入对应 package.json）
-pnpm --filter @nnnb/hhfast-ui version patch
-# 或
-pnpm --filter @nnnb/hhfast-utils version patch
+# 1) 确认 npm 身份及远端版本
+npm whoami
+npm view @nnnb/hhfast-utils version
+npm view @nnnb/hhfast-ui version
 
-# 2) 运行该模块发布前检查
-pnpm run release:ui
-# 或
-pnpm run release:utils
+# 2) 执行完整门禁并生成本地 tarball
+pnpm run release:check
 
-# 3) 发布该模块
-pnpm run publish:ui
-# 或
+# 3) 先发布 0.1.0 utils，确认 registry 可见
 pnpm run publish:utils
+npm view @nnnb/hhfast-utils@0.1.0 version
+
+# 4) 再发布 0.1.0 UI
+pnpm run publish:ui
 ```
+
+发布命令均为本地手动操作；`release:check` 和 `verify:packages` 不会执行 `npm publish`。验证后的包位于 `artifacts/npm/`。
 
 `@nnnb/hhfast-utils` 虽然包含 `background-task-manager`、`task-execution-chain` 等子路径导出，但它们属于同一个 npm 包（`@nnnb/hhfast-utils`），发布时统一随该包版本一起发布。
 

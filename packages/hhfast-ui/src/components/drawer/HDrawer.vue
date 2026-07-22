@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import type { DrawerPlacement } from './types'
 
 defineOptions({ name: 'HDrawer' })
@@ -28,6 +28,10 @@ const emit = defineEmits<{
   'update:open': [value: boolean]
 }>()
 
+const panelRef = ref<HTMLElement | null>(null)
+const titleId = `hh-drawer-title-${Math.random().toString(36).slice(2)}`
+let previouslyFocused: HTMLElement | null = null
+
 const close = () => emit('update:open', false)
 
 const onMaskClick = () => {
@@ -36,10 +40,60 @@ const onMaskClick = () => {
 
 const drawerStyle = computed(() => {
   if (props.placement === 'left' || props.placement === 'right') {
-    return { width: typeof props.width === 'number' ? `${props.width}px` : props.width }
+    return {
+      width: typeof props.width === 'number' ? `${props.width}px` : props.width,
+      maxWidth: '100vw',
+    }
   }
-  return { height: typeof props.height === 'number' ? `${props.height}px` : props.height }
+  return {
+    height: typeof props.height === 'number' ? `${props.height}px` : props.height,
+    maxHeight: '100vh',
+  }
 })
+
+function getFocusable(): HTMLElement[] {
+  if (!panelRef.value) return []
+  return Array.from(panelRef.value.querySelectorAll<HTMLElement>(
+    'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+  ))
+}
+
+function onKeydown(event: KeyboardEvent): void {
+  if (!props.open) return
+  if (event.key === 'Escape' && props.closable) {
+    event.preventDefault()
+    close()
+    return
+  }
+  if (event.key !== 'Tab') return
+  const focusable = getFocusable()
+  const first = focusable[0] ?? panelRef.value
+  const last = focusable[focusable.length - 1] ?? panelRef.value
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault()
+    last?.focus()
+  }
+  else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault()
+    first?.focus()
+  }
+}
+
+watch(() => props.open, async (open) => {
+  if (open) {
+    previouslyFocused = document.activeElement as HTMLElement | null
+    document.addEventListener('keydown', onKeydown)
+    await nextTick()
+    ;(getFocusable()[0] ?? panelRef.value)?.focus()
+  }
+  else {
+    document.removeEventListener('keydown', onKeydown)
+    previouslyFocused?.focus()
+    previouslyFocused = null
+  }
+})
+
+onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
 </script>
 
 <template>
@@ -49,15 +103,20 @@ const drawerStyle = computed(() => {
         <Transition :name="`hh-drawer-${placement}`">
           <aside
             v-if="open"
+            ref="panelRef"
             class="hh-drawer-panel"
             :class="[`hh-drawer--${placement}`]"
             :style="drawerStyle"
+            role="dialog"
+            aria-modal="true"
+            :aria-labelledby="title || $slots.header ? titleId : undefined"
+            tabindex="-1"
           >
             <header v-if="title || $slots.header || closable" class="hh-drawer-header">
               <slot name="header">
-                <span class="hh-drawer-title">{{ title }}</span>
+                <span :id="titleId" class="hh-drawer-title">{{ title }}</span>
               </slot>
-              <button v-if="closable" type="button" class="hh-drawer-close" @click="close">×</button>
+              <button v-if="closable" type="button" class="hh-drawer-close" aria-label="关闭抽屉" @click="close">×</button>
             </header>
 
             <div class="hh-drawer-body">

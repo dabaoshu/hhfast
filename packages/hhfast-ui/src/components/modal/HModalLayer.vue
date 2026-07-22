@@ -10,11 +10,71 @@
  * </template>
  * ```
  */
+import { nextTick, onBeforeUnmount, onMounted, watch } from 'vue'
 import { useModalLayer } from './useModalLayer'
 
 defineOptions({ name: 'HModalLayer' })
 
 const { modalList, loadingMap, handleConfirm, handleCancel, handleMaskClick } = useModalLayer()
+
+let previouslyFocused: HTMLElement | null = null
+
+function getFocusable(container: HTMLElement): HTMLElement[] {
+  return Array.from(container.querySelectorAll<HTMLElement>(
+    'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+  ))
+}
+
+function focusTopModal(): void {
+  const top = modalList.at(-1)
+  if (!top) return
+  const dialog = document.querySelector<HTMLElement>(`[data-modal-id="${top.id}"]`)
+  ;(dialog && (getFocusable(dialog)[0] ?? dialog))?.focus()
+}
+
+function onKeydown(event: KeyboardEvent): void {
+  const top = modalList.at(-1)
+  if (!top) return
+  if (event.key === 'Escape') {
+    event.preventDefault()
+    handleCancel(top)
+    return
+  }
+  if (event.key !== 'Tab') return
+  const dialog = document.querySelector<HTMLElement>(`[data-modal-id="${top.id}"]`)
+  if (!dialog) return
+  const focusable = getFocusable(dialog)
+  const first = focusable[0] ?? dialog
+  const last = focusable[focusable.length - 1] ?? dialog
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault()
+    last.focus()
+  }
+  else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault()
+    first.focus()
+  }
+}
+
+watch(
+  () => modalList.map(item => item.id),
+  async (ids, previousIds) => {
+    if (previousIds.length === 0 && ids.length > 0) {
+      previouslyFocused = document.activeElement as HTMLElement | null
+    }
+    if (ids.length > 0) {
+      await nextTick()
+      focusTopModal()
+    }
+    else if (previousIds.length > 0) {
+      previouslyFocused?.focus()
+      previouslyFocused = null
+    }
+  },
+)
+
+onMounted(() => document.addEventListener('keydown', onKeydown))
+onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
 </script>
 
 <template>
@@ -26,12 +86,21 @@ const { modalList, loadingMap, handleConfirm, handleCancel, handleMaskClick } = 
       :style="{ zIndex: item.zIndex }"
       @click.self="handleMaskClick(item)"
     >
-      <div class="hh-modal-dialog" :class="[`hh-modal--${item.type}`]">
+      <div
+        class="hh-modal-dialog"
+        :class="[`hh-modal--${item.type}`]"
+        role="dialog"
+        aria-modal="true"
+        :aria-labelledby="`${item.id}-title`"
+        :data-modal-id="item.id"
+        tabindex="-1"
+      >
         <div class="hh-modal-header">
-          <span class="hh-modal-title">{{ item.title || '弹层' }}</span>
+          <span :id="`${item.id}-title`" class="hh-modal-title">{{ item.title || '弹层' }}</span>
           <button
             type="button"
             class="hh-modal-close-btn"
+            aria-label="关闭弹层"
             @click="handleCancel(item)"
           >
             ×

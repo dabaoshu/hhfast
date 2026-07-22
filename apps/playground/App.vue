@@ -2,15 +2,49 @@
 /**
  * @description Playground 主布局：左侧分组菜单 + 路由内容区
  */
-import { RouterLink, RouterView } from 'vue-router'
+import { ref, watch } from 'vue'
+import { RouterLink, RouterView, useRoute } from 'vue-router'
 import { HConfigProvider } from '@/components/config-provider'
 import { demoGroups, demoRoutePath } from './router'
+
+const route = useRoute()
+const navigationOpen = ref(false)
+
+watch(() => route.fullPath, () => {
+  navigationOpen.value = false
+})
 </script>
 
 <template>
   <HConfigProvider>
     <div class="pg-layout">
-      <aside class="pg-sidebar">
+      <header class="pg-mobile-header">
+        <RouterLink class="pg-logo pg-mobile-logo" to="/">Hhfast Playground</RouterLink>
+        <button
+          type="button"
+          class="pg-menu-button"
+          :aria-expanded="navigationOpen"
+          aria-controls="playground-navigation"
+          aria-label="打开示例导航"
+          @click="navigationOpen = !navigationOpen"
+        >
+          ☰
+        </button>
+      </header>
+
+      <button
+        v-if="navigationOpen"
+        type="button"
+        class="pg-sidebar-backdrop"
+        aria-label="关闭示例导航"
+        @click="navigationOpen = false"
+      />
+
+      <aside
+        id="playground-navigation"
+        class="pg-sidebar"
+        :class="{ 'pg-sidebar--open': navigationOpen }"
+      >
         <RouterLink class="pg-logo" to="/">Hhfast Playground</RouterLink>
         <nav class="pg-nav">
           <section
@@ -25,6 +59,7 @@ import { demoGroups, demoRoutePath } from './router'
               :to="demoRoutePath(group.basePath, demo.path)"
               class="pg-nav-item"
               active-class="pg-nav-item--active"
+              @click="navigationOpen = false"
             >
               {{ demo.label }}
             </RouterLink>
@@ -53,6 +88,11 @@ import { demoGroups, demoRoutePath } from './router'
   min-height: 100vh;
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   color: #1f1f1f;
+}
+
+.pg-mobile-header,
+.pg-sidebar-backdrop {
+  display: none;
 }
 
 /* ---- Sidebar ---- */
@@ -135,7 +175,72 @@ import { demoGroups, demoRoutePath } from './router'
 .pg-main {
   margin-left: 200px;
   flex: 1;
+  min-width: 0;
   padding: 32px 36px 64px;
   max-width: 1200px;
+}
+
+@media (max-width: 767px) {
+  .pg-layout {
+    display: block;
+    padding-top: 56px;
+  }
+
+  .pg-mobile-header {
+    position: fixed;
+    inset: 0 0 auto;
+    z-index: 120;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    background: #fff;
+    border-bottom: 1px solid #e8e8e8;
+  }
+
+  .pg-mobile-logo {
+    padding: 0;
+    border: 0;
+  }
+
+  .pg-menu-button {
+    border: 0;
+    border-radius: 8px;
+    background: #f1f5f9;
+    color: #1f1f1f;
+    width: 40px;
+    height: 40px;
+    font-size: 22px;
+    cursor: pointer;
+  }
+
+  .pg-sidebar {
+    width: min(280px, calc(100vw - 48px));
+    z-index: 140;
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+  }
+
+  .pg-sidebar--open {
+    transform: translateX(0);
+  }
+
+  .pg-sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 130;
+    border: 0;
+    background: rgba(15, 23, 42, 0.4);
+  }
+
+  .pg-main {
+    margin-left: 0;
+    width: 100%;
+    max-width: none;
+    padding: 20px 16px 48px;
+    overflow-x: hidden;
+  }
 }
 </style>

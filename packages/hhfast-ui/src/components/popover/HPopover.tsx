@@ -7,6 +7,7 @@ import {
   onMounted,
   onBeforeUnmount,
   nextTick,
+  Teleport,
   Transition,
   type SlotsType,
   type PropType,
@@ -15,6 +16,8 @@ import {
 import type { PopoverPlacement } from './types'
 import { calcTooltipPosition } from '../tooltip/useTooltipPosition'
 import './popover.scss'
+
+let popoverIdSequence = 0
 
 // ==================== Props 定义 ====================
 
@@ -79,6 +82,7 @@ const HPopover = defineComponent({
     content: {}
   }>,
   setup(props, { emit, slots }) {
+    const popoverId = `hh-popover-${++popoverIdSequence}`
     const isVisible = ref(false)
     const referenceRef = ref<HTMLElement | null>(null)
     const popperRef = ref<HTMLElement | null>(null)
@@ -307,6 +311,7 @@ const HPopover = defineComponent({
     return () => {
       const popperNodes = isVisible.value ? (
         <div
+          id={popoverId}
           ref={popperRef}
           class={[
             'hh-popover',
@@ -314,7 +319,7 @@ const HPopover = defineComponent({
             props.overlayClassName,
           ]}
           style={mergedStyle.value}
-          role="tooltip"
+          role="dialog"
           onMouseenter={onPopperMouseEnter}
           onMouseleave={onPopperMouseLeave}
         >
@@ -343,7 +348,12 @@ const HPopover = defineComponent({
           onFocusout={onFocusOut}
           onClick={onClick}
         >
-          <div ref={referenceRef} class="hh-popover-reference">
+          <div
+            ref={referenceRef}
+            class="hh-popover-reference"
+            aria-controls={popoverId}
+            aria-expanded={isVisible.value ? 'true' : 'false'}
+          >
             {slots.default?.()}
           </div>
           <Teleport to="body">

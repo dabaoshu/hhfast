@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
+import HomeDemo from '../demos/HomeDemo.vue'
 
 /** 侧边栏 demo 分组配置 */
 export const demoGroups = [
@@ -120,9 +121,9 @@ const demoRoutes: RouteRecordRaw[] = demoGroups.flatMap((group) =>
 export const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-    { path: '/', redirect: '/utils/works-chain' },
+    { path: '/', name: 'home', component: HomeDemo },
     ...demoRoutes,
-    { path: '/:pathMatch(.*)*', redirect: '/utils/works-chain' },
+    { path: '/:pathMatch(.*)*', redirect: '/' },
   ],
 })
 

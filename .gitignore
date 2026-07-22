@@ -7,3 +7,7 @@ packages/hhfast-utils/tsconfig.tsbuildinfo
 packages/hhfast-ui/tsconfig.tsbuildinfo
 apps/playground/tsconfig.tsbuildinfo
 apps/playground-backend/uploads/
+apps/playground/test-results/
+apps/playground/playwright-report/
+artifacts/
+graphify-out/

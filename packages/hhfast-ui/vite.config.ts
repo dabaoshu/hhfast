@@ -28,6 +28,7 @@ export default defineConfig({
         react: resolve(__dirname, "src/react.ts"),
       },
       formats: ["es"],
+      cssFileName: "index",
     },
     rollupOptions: {
       external: ["vue", "react", "@nnnb/hhfast-utils"],

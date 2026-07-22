@@ -5,7 +5,6 @@ import {
   computed,
   onMounted,
   onBeforeUnmount,
-  watch,
   type PropType,
   type VNode,
   type CSSProperties,
@@ -87,6 +86,7 @@ const Splitter = defineComponent({
     const isDragging = ref(false)
     const draggingIndex = ref(-1)
     const lazySizes = ref<number[]>([])
+    const panelConfigSignature = ref('')
 
     // ---- 容器尺寸观察 ----
     let resizeObserver: ResizeObserver | null = null
@@ -112,9 +112,7 @@ const Splitter = defineComponent({
     })
 
     // ---- 从 slots 提取面板配置 ----
-    function extractPanelConfigs(): InternalPanelState[] {
-      const vnodes = slots.default?.() ?? []
-      const panelNodes = flattenVNodes(vnodes).filter(isPanelVNode)
+    function extractPanelConfigs(panelNodes: VNode[]): InternalPanelState[] {
       const count = panelNodes.length
       if (count === 0) {
         return []
@@ -168,23 +166,20 @@ const Splitter = defineComponent({
       return states
     }
 
-    // 初始化和 slot 变化时更新
-    watch(
-      () => slots.default?.(),
-      () => {
-        const newPanels = extractPanelConfigs()
-        // 保留已有的 size（除非面板数量变了）
-        if (panels.value.length === newPanels.length) {
-          for (let i = 0; i < newPanels.length; i++) {
-            newPanels[i].size = panels.value[i].size
-            newPanels[i].collapsed = panels.value[i].collapsed
-            newPanels[i].sizeBeforeCollapse = panels.value[i].sizeBeforeCollapse
-          }
+    function syncPanelConfigs(panelNodes: VNode[]): void {
+      const signature = JSON.stringify(panelNodes.map(node => node.props ?? {}))
+      if (signature === panelConfigSignature.value) return
+      const newPanels = extractPanelConfigs(panelNodes)
+      if (panels.value.length === newPanels.length) {
+        for (let i = 0; i < newPanels.length; i++) {
+          newPanels[i].size = panels.value[i].size
+          newPanels[i].collapsed = panels.value[i].collapsed
+          newPanels[i].sizeBeforeCollapse = panels.value[i].sizeBeforeCollapse
         }
-        panels.value = newPanels
-      },
-      { immediate: true },
-    )
+      }
+      panels.value = newPanels
+      panelConfigSignature.value = signature
+    }
 
     // ---- 拖拽逻辑 ----
     let startPos = 0
@@ -229,20 +224,7 @@ const Splitter = defineComponent({
       const deltaPct = containerSize.value > 0 ? (delta / containerSize.value) * 100 : 0
 
       const idx = draggingIndex.value
-      const leftStart = startSizes[idx]
-      const rightStart = startSizes[idx + 1]
-
-      const leftPanel = panels.value[idx]
-      const rightPanel = panels.value[idx + 1]
-
-      let newLeft = leftStart + deltaPct
-      let newRight = rightStart - deltaPct
-
-      // 钳制
-      newLeft = Math.max(leftPanel.min, Math.min(leftPanel.max, newLeft))
-      newRight = rightStart + leftStart - newLeft
-      newRight = Math.max(rightPanel.min, Math.min(rightPanel.max, newRight))
-      newLeft = leftStart + rightStart - newRight
+      const [newLeft, newRight] = resizePair(idx, startSizes[idx], startSizes[idx + 1], deltaPct)
 
       if (props.lazy) {
         lazySizes.value[idx] = newLeft
@@ -257,6 +239,33 @@ const Splitter = defineComponent({
         panels.value[idx + 1].collapsed = newRight <= panels.value[idx + 1].min
       }
 
+      emit('resize', getSizesInPx())
+    }
+
+    function resizePair(index: number, leftStart: number, rightStart: number, deltaPct: number): [number, number] {
+      const leftPanel = panels.value[index]
+      const rightPanel = panels.value[index + 1]
+      let newLeft = Math.max(leftPanel.min, Math.min(leftPanel.max, leftStart + deltaPct))
+      let newRight = rightStart + leftStart - newLeft
+      newRight = Math.max(rightPanel.min, Math.min(rightPanel.max, newRight))
+      newLeft = leftStart + rightStart - newRight
+      return [newLeft, newRight]
+    }
+
+    function onSeparatorKeydown(index: number, event: KeyboardEvent): void {
+      const negativeKey = props.orientation === 'horizontal' ? 'ArrowLeft' : 'ArrowUp'
+      const positiveKey = props.orientation === 'horizontal' ? 'ArrowRight' : 'ArrowDown'
+      if (event.key !== negativeKey && event.key !== positiveKey) return
+      event.preventDefault()
+      const step = event.shiftKey ? 10 : 1
+      const delta = event.key === positiveKey ? step : -step
+      const leftStart = panels.value[index].size
+      const rightStart = panels.value[index + 1].size
+      const [newLeft, newRight] = resizePair(index, leftStart, rightStart, delta)
+      panels.value[index].size = newLeft
+      panels.value[index + 1].size = newRight
+      panels.value[index].collapsed = newLeft <= panels.value[index].min
+      panels.value[index + 1].collapsed = newRight <= panels.value[index + 1].min
       emit('resize', getSizesInPx())
     }
 
@@ -357,6 +366,7 @@ const Splitter = defineComponent({
     return () => {
       const vnodes = slots.default?.() ?? []
       const panelNodes = flattenVNodes(vnodes).filter(isPanelVNode)
+      syncPanelConfigs(panelNodes)
       const isHorizontal = props.orientation === 'horizontal'
 
       const rootClass = [
@@ -419,7 +429,14 @@ const Splitter = defineComponent({
                 draggingIndex.value === i && 'hh-splitter-bar--active',
               ]}
               key={`bar-${i}`}
+              role="separator"
+              tabindex={canDrag ? 0 : -1}
+              aria-orientation={isHorizontal ? 'vertical' : 'horizontal'}
+              aria-valuemin={panel.min}
+              aria-valuemax={panel.max}
+              aria-valuenow={Math.round(panel.size)}
               onMousedown={(e: MouseEvent) => canDrag && onDragStart(i, e)}
+              onKeydown={(e: KeyboardEvent) => canDrag && onSeparatorKeydown(i, e)}
             >
               <div class="hh-splitter-bar__trigger">
                 {leftCollapsible && (

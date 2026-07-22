@@ -1,0 +1,23 @@
+{
+  "skill_name": "hhfast-dev",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "为 hhfast-ui 创建一个新的 HButton 组件，包含按钮的基本功能（不同类型、大小、状态），参考现有 HTable 组件的结构",
+      "expected_output": "包含 index.ts, button.vue, buttonTypes.ts, useButton.ts 的完整组件结构",
+      "files": ["src/components/table/index.ts", "src/components/table/table.vue"]
+    },
+    {
+      "id": 2,
+      "prompt": "检查 src/index.ts 的导出是否规范，确保所有组件和类型都有正确的 export type 声明",
+      "expected_output": "列出需要修复的导出问题（如缺少 type 关键字的导出）",
+      "files": ["src/index.ts"]
+    },
+    {
+      "id": 3,
+      "prompt": "为 TaskExecutionChain 添加一个新的可视化渲染器功能，支持输出 PlantUML 格式",
+      "expected_output": "在 task-execution-chain 模块中添加 PlantUML 渲染逻辑",
+      "files": ["src/core/task-execution-chain/taskExecutionChain.ts"]
+    }
+  ]
+}

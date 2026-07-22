@@ -30,6 +30,7 @@ const subpathEntries = {
  * Utils 包构建配置：preserveModules 保留 src 目录结构，支持 subpath 按需导入。
  */
 export default defineConfig({
+  base: "./",
   plugins: [
     dts({
       insertTypesEntry: true,

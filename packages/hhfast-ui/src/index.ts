@@ -1,5 +1,6 @@
 import type { App, Plugin } from "vue";
 import { HTable } from "./components/table";
+import { HPopover } from "./components/popover";
 export * from "./components/popover";
 import { HTooltip, vTooltip } from "./components/tooltip";
 import { Splitter, SplitterPanel } from "./components/splitter";
@@ -125,9 +126,11 @@ export const HhfastUi: Plugin = {
   install(app: App) {
     app.component("HTable", HTable);
     app.component("HTooltip", HTooltip);
+    app.component("HPopover", HPopover);
     app.component("HSplitter", Splitter);
     app.component("HSplitterPanel", SplitterPanel);
     app.component("HConfigProvider", HConfigProvider);
+    app.component("HDrawer", HDrawer);
     app.component("HTree", HTree);
     app.directive("tooltip", vTooltip);
   },
