@@ -88,3 +88,34 @@ export type ModalConfirmPayload = ModalShowOptions & { content?: ModalContentInp
  * `createModal` 工厂默认项（无 `content`）。
  */
 export type ModalGlobalDefaults = ModalShowOptions;
+
+/**
+ * 声明式 HModal 的 props。
+ */
+export interface HModalProps {
+  /** 显隐（`v-model`） */
+  modelValue: boolean;
+  title?: string;
+  type?: ModalType;
+  maskClosable?: boolean;
+  closable?: boolean;
+  showConfirm?: boolean;
+  showCancel?: boolean;
+  confirmText?: string;
+  cancelText?: string;
+  /** 确认按钮受控 loading */
+  confirmLoading?: boolean;
+  zIndex?: number;
+  className?: string | string[];
+  style?: string | CSSProperties;
+}
+
+/**
+ * 声明式 HModal 的事件。
+ */
+export type HModalEmits = {
+  'update:modelValue': [value: boolean];
+  confirm: [];
+  cancel: [];
+  close: [];
+};

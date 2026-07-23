@@ -2,6 +2,31 @@ import { h, nextTick } from 'vue'
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import { closeAllModals, HModalLayer, openModal } from '../src/components/modal'
+import {
+  isTopHModalInstance,
+  registerHModalInstance,
+  unregisterHModalInstance,
+} from '../src/components/modal/hModalRegistry'
+
+describe('hModalRegistry', () => {
+  it('treats the highest zIndex instance as top', () => {
+    const low = registerHModalInstance(1000)
+    const high = registerHModalInstance(1010)
+    expect(isTopHModalInstance(high)).toBe(true)
+    expect(isTopHModalInstance(low)).toBe(false)
+    unregisterHModalInstance(high)
+    expect(isTopHModalInstance(low)).toBe(true)
+    unregisterHModalInstance(low)
+  })
+
+  it('prefers the later registration when zIndex ties', () => {
+    const first = registerHModalInstance(1000)
+    const second = registerHModalInstance(1000)
+    expect(isTopHModalInstance(second)).toBe(true)
+    unregisterHModalInstance(second)
+    unregisterHModalInstance(first)
+  })
+})
 
 afterEach(() => closeAllModals())
 
