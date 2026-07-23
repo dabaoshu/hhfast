@@ -1,12 +1,14 @@
 <script setup lang="ts">
 /**
- * @description Modal 组件演示
+ * @description Modal 组件演示（命令式栈 + 声明式 HModal）
  */
-import { h } from 'vue'
+import { h, ref } from 'vue'
 import { toast } from '@/components/toast'
-import { modal, createModal } from '@/components/modal'
+import { HModal, modal, createModal } from '@/components/modal'
 
 const dangerModal = createModal({ type: 'danger' })
+const declarativeOpen = ref(false)
+const declarativeLoading = ref(false)
 
 function modalBasicOpen() {
   modal.open({
@@ -99,16 +101,44 @@ function modalOnlyTitle() {
     .then(() => toast.success('确认退出'))
     .catch(() => toast.info('取消退出'))
 }
+
+/**
+ * 声明式确认：自行控制 loading 与关闭。
+ */
+async function onDeclarativeConfirm() {
+  declarativeLoading.value = true
+  await new Promise((r) => setTimeout(r, 800))
+  declarativeLoading.value = false
+  declarativeOpen.value = false
+  toast.success('声明式确认完成')
+}
 </script>
 
 <template>
   <section class="pg-section">
     <h2>Modal 演示</h2>
     <p class="pg-desc">
-      Modal 只提供逻辑栈（入栈/出栈/Promise confirm），UI 由
-      <code>DemoModalLayer</code> 自绘。<br />
+      声明式用 <code>HModal</code>（v-model，不入栈）；命令式用
+      <code>modal.open</code> / <code>confirm</code>，由
+      <code>HModalLayer</code> / Demo 渲染层展示。<br />
       <code>modal.confirm()</code> 返回 Promise：确认 → resolve，取消 → reject。
     </p>
+
+    <div class="pg-card">
+      <h3>HModal — 声明式</h3>
+      <p class="pg-card-desc">v-model 控制，不入全局栈；确认需自行关闭</p>
+      <div class="pg-actions">
+        <button class="btn" @click="declarativeOpen = true">打开声明式 Modal</button>
+      </div>
+      <HModal
+        v-model="declarativeOpen"
+        title="声明式弹层"
+        :confirm-loading="declarativeLoading"
+        @confirm="onDeclarativeConfirm"
+      >
+        <p>这是 HModal 声明式用法，与 modal.open 栈互不影响。</p>
+      </HModal>
+    </div>
 
     <div class="pg-card">
       <h3>modal.open — 基础弹层</h3>

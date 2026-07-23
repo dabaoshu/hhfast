@@ -1,14 +1,57 @@
 # Modal 子模块
 
-维护 **全局弹层栈**、**命令式 API**、**`useModal`** / **`useModalLayer`** 以及内置渲染层 **`HModalLayer`**。
+维护 **声明式 `HModal`**、**全局弹层栈**、**命令式 API**、**`useModal`** / **`useModalLayer`** 以及内置渲染层 **`HModalLayer`**（内部复用 `HModal`）。
 
-- **开箱即用**：在根组件挂载 `<HModalLayer />` 即可获得默认 Modal UI。
+- **声明式**：`<HModal v-model="open" />`，不入全局栈，适合页面内局部弹窗。
+- **开箱即用（命令式）**：在根组件挂载 `<HModalLayer />` 即可获得默认 Modal UI。
 - **自定义 UI**：也可不使用 `HModalLayer`，通过 `useModalLayer()` / `useModal()` 订阅栈后自行渲染。
+
+## 声明式 HModal
+
+```vue
+<script setup lang="ts">
+import { ref } from 'vue'
+import { HModal } from '@nnnb/hhfast-ui'
+
+const open = ref(false)
+const loading = ref(false)
+
+async function onConfirm() {
+  loading.value = true
+  try {
+    await save()
+    open.value = false
+  } finally {
+    loading.value = false
+  }
+}
+</script>
+
+<template>
+  <button @click="open = true">打开</button>
+  <HModal
+    v-model="open"
+    title="编辑"
+    :confirm-loading="loading"
+    @confirm="onConfirm"
+  >
+    <p>表单内容</p>
+  </HModal>
+</template>
+```
+
+要点：
+
+- 确认**不会**自动关闭，需在 `@confirm` 里自行把 `v-model` 设为 `false`。
+- 可用 `header` / `footer` / `title` / `default` slot 覆盖默认 UI。
+- 与 `modal.open` / `confirm` 互不入栈；同时打开时 ESC 响应最高 `zIndex` 的实例。
 
 ## 从入口导入
 
 ```ts
 import {
+  HModal,
+  HModalLayer,
   modal,
   createModal,
   useModal,
@@ -20,6 +63,7 @@ import {
   type ModalConfirmPayload,
   type ModalRecord,
   type ModalType,
+  type HModalProps,
   type UseModalReturn,
 } from '@/components/modal';
 ```
@@ -102,10 +146,12 @@ try {
 
 | 文件 | 说明 |
 |------|------|
-| `types.ts` | `ModalRecord`、`ModalShowOptions`、`ModalOpenPayload`、`ModalConfirmPayload`、`ModalType` |
+| `types.ts` | `ModalRecord`、`HModalProps`、`ModalShowOptions` 等 |
+| `hModalRegistry.ts` | 声明式实例顶层 ESC 判定 |
+| `HModal.vue` | 声明式通用壳（mask/dialog/样式/焦点） |
 | `modalState.ts` | 栈、`openModal` / `closeModal` / `closeAllModals`、`useModal` |
 | `createModal.ts` | `createModal`（含 `confirm`）与默认 `modal` 单例 |
-| `HModalLayer.vue` | 内置渲染层组件 |
+| `HModalLayer.vue` | 栈渲染层（薄包装，每层复用 `HModal`） |
 | `index.ts` | 对外导出 |
 
 ## 与 `messageConfirm` 的关系
