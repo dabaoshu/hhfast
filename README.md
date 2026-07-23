@@ -145,6 +145,8 @@ pnpm run publish:ui
 
 发布命令均为本地手动操作；`release:check` 和 `verify:packages` 不会执行 `npm publish`。验证后的包位于 `artifacts/npm/`。
 
+源码里 `@nnnb/hhfast-ui` 对 utils 使用 `workspace:*`；**必须用 `pnpm publish`（不要用 `npm publish`）**，pnpm 会在 pack/publish 时自动改写成 utils 的真实版本（如 `0.1.0`）。`verify:packages` 会校验 tarball 内不再残留 `workspace:`。
+
 `@nnnb/hhfast-utils` 虽然包含 `background-task-manager`、`task-execution-chain` 等子路径导出，但它们属于同一个 npm 包（`@nnnb/hhfast-utils`），发布时统一随该包版本一起发布。
 
 ## 许可证

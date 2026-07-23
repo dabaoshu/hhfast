@@ -33,12 +33,60 @@ function run(args, cwd = repositoryRoot, printOutput = true) {
   return result.stdout.trim()
 }
 
+/**
+ * 从 tarball 读取 package/package.json
+ * @param {string} tarballPath
+ */
+function readTarballManifest(tarballPath) {
+  const result = spawnSync('tar', ['-xOf', tarballPath, 'package/package.json'], {
+    encoding: 'utf8',
+    env: childEnvironment,
+  })
+  if (result.status !== 0) {
+    throw new Error(`Failed to read package.json from ${tarballPath}\n${result.stderr}`)
+  }
+  return JSON.parse(result.stdout)
+}
+
+/**
+ * 断言发布产物无 workspace 协议，且 UI 依赖已解析为 utils 真实版本
+ * @param {string} tarballPath
+ * @param {string} packageName
+ */
+function assertPublishedManifest(tarballPath, packageName) {
+  const manifest = readTarballManifest(tarballPath)
+  const dependencyBlocks = ['dependencies', 'optionalDependencies', 'peerDependencies']
+  for (const block of dependencyBlocks) {
+    const deps = manifest[block]
+    if (!deps) continue
+    for (const [name, version] of Object.entries(deps)) {
+      if (typeof version === 'string' && version.includes('workspace:')) {
+        throw new Error(`${packageName} tarball still contains ${block}.${name}=${version}`)
+      }
+    }
+  }
+  if (packageName === '@nnnb/hhfast-ui') {
+    const utilsVersion = JSON.parse(
+      readFileSync(join(repositoryRoot, 'packages/hhfast-utils/package.json'), 'utf8'),
+    ).version
+    const resolved = manifest.dependencies?.['@nnnb/hhfast-utils']
+    if (resolved !== utilsVersion) {
+      throw new Error(
+        `@nnnb/hhfast-ui dependency @nnnb/hhfast-utils expected "${utilsVersion}", got "${resolved}"`,
+      )
+    }
+  }
+  console.log(`Manifest OK: ${packageName} (no workspace: protocol)`)
+}
+
 function pack(packageName) {
   const before = new Set(readFileNames())
   run(['--filter', packageName, 'pack', '--pack-destination', artifactDir], repositoryRoot, false)
   const filename = readFileNames().find(name => name.endsWith('.tgz') && !before.has(name))
   if (!filename) throw new Error(`No tarball created for ${packageName}`)
-  return join(artifactDir, filename)
+  const tarballPath = join(artifactDir, filename)
+  assertPublishedManifest(tarballPath, packageName)
+  return tarballPath
 }
 
 function readFileNames() {
