@@ -2,6 +2,7 @@
 /**
  * @description 声明式抽屉壳：v-model:open，不入全局 drawer 栈。
  * 可选内置确认/取消 footer；供 HDrawerLayer 复用。
+ * 进出场按 placement 从对应边滑入/滑出，蒙层同步淡入淡出。
  */
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import type { CSSProperties } from 'vue'
@@ -60,6 +61,9 @@ const panelRef = ref<HTMLElement | null>(null)
 const titleId = `hh-drawer-title-${Math.random().toString(36).slice(2)}`
 let previouslyFocused: HTMLElement | null = null
 let registryId: symbol | null = null
+
+/** Transition 名称随 placement 变化，确保进出场方向一致 */
+const transitionName = computed(() => `hh-drawer-${props.placement}`)
 
 const panelClass = computed(() => [
   'hh-drawer-panel',
@@ -188,77 +192,78 @@ onBeforeUnmount(() => {
 
 <template>
   <Teleport to="body">
-    <Transition name="hh-drawer-fade" @after-leave="onAfterLeave">
+    <!--
+      单一 Transition，name 随 placement 变化：
+      蒙层淡入淡出 + 面板从对应边滑入/滑出（关闭时方向与打开一致）。
+    -->
+    <Transition :name="transitionName" @after-leave="onAfterLeave">
       <div
         v-if="open"
         class="hh-drawer-mask"
         :style="{ zIndex }"
         @click.self="onMaskClick"
       >
-        <Transition :name="`hh-drawer-${placement}`">
-          <aside
-            v-if="open"
-            ref="panelRef"
-            :class="panelClass"
-            :style="drawerStyle"
-            role="dialog"
-            aria-modal="true"
-            :aria-labelledby="title || $slots.header ? titleId : undefined"
-            tabindex="-1"
+        <aside
+          ref="panelRef"
+          :class="panelClass"
+          :style="drawerStyle"
+          role="dialog"
+          aria-modal="true"
+          :aria-labelledby="title || $slots.header ? titleId : undefined"
+          tabindex="-1"
+        >
+          <header
+            v-if="title || $slots.header || closable"
+            class="hh-drawer-header"
           >
-            <header
-              v-if="title || $slots.header || closable"
-              class="hh-drawer-header"
+            <slot name="header">
+              <span :id="titleId" class="hh-drawer-title">{{ title }}</span>
+            </slot>
+            <button
+              v-if="closable"
+              type="button"
+              class="hh-drawer-close"
+              aria-label="关闭抽屉"
+              @click="requestClose"
             >
-              <slot name="header">
-                <span :id="titleId" class="hh-drawer-title">{{ title }}</span>
-              </slot>
+              ×
+            </button>
+          </header>
+
+          <div class="hh-drawer-body">
+            <slot />
+          </div>
+
+          <footer
+            v-if="showConfirm || showCancel || $slots.footer"
+            class="hh-drawer-footer"
+          >
+            <slot
+              name="footer"
+              :confirm="handleConfirm"
+              :cancel="requestClose"
+              :loading="confirmLoading"
+            >
               <button
-                v-if="closable"
+                v-if="showCancel"
                 type="button"
-                class="hh-drawer-close"
-                aria-label="关闭抽屉"
+                class="hh-drawer-btn hh-drawer-btn--cancel"
                 @click="requestClose"
               >
-                ×
+                {{ cancelText }}
               </button>
-            </header>
-
-            <div class="hh-drawer-body">
-              <slot />
-            </div>
-
-            <footer
-              v-if="showConfirm || showCancel || $slots.footer"
-              class="hh-drawer-footer"
-            >
-              <slot
-                name="footer"
-                :confirm="handleConfirm"
-                :cancel="requestClose"
-                :loading="confirmLoading"
+              <button
+                v-if="showConfirm"
+                type="button"
+                class="hh-drawer-btn hh-drawer-btn--confirm"
+                :disabled="confirmLoading"
+                @click="handleConfirm"
               >
-                <button
-                  v-if="showCancel"
-                  type="button"
-                  class="hh-drawer-btn hh-drawer-btn--cancel"
-                  @click="requestClose"
-                >
-                  {{ cancelText }}
-                </button>
-                <button
-                  v-if="showConfirm"
-                  type="button"
-                  class="hh-drawer-btn hh-drawer-btn--confirm"
-                  :disabled="confirmLoading"
-                  @click="handleConfirm"
-                >
-                  {{ confirmLoading ? '处理中…' : confirmText }}
-                </button>
-              </slot>
-            </footer>
-          </aside>
-        </Transition>
+                {{ confirmLoading ? '处理中…' : confirmText }}
+              </button>
+            </slot>
+          </footer>
+        </aside>
       </div>
     </Transition>
   </Teleport>
@@ -366,15 +371,7 @@ onBeforeUnmount(() => {
   cursor: not-allowed;
 }
 
-.hh-drawer-fade-enter-active,
-.hh-drawer-fade-leave-active {
-  transition: opacity 0.18s ease;
-}
-
-.hh-drawer-fade-enter-from,
-.hh-drawer-fade-leave-to {
-  opacity: 0;
-}
+/* ---- placement：蒙层淡入淡出 + 面板从对应边滑入/滑出 ---- */
 
 .hh-drawer-right-enter-active,
 .hh-drawer-right-leave-active,
@@ -384,26 +381,48 @@ onBeforeUnmount(() => {
 .hh-drawer-top-leave-active,
 .hh-drawer-bottom-enter-active,
 .hh-drawer-bottom-leave-active {
-  transition: transform 0.22s ease;
+  transition: opacity 0.2s ease;
+}
+
+.hh-drawer-right-enter-active .hh-drawer-panel,
+.hh-drawer-right-leave-active .hh-drawer-panel,
+.hh-drawer-left-enter-active .hh-drawer-panel,
+.hh-drawer-left-leave-active .hh-drawer-panel,
+.hh-drawer-top-enter-active .hh-drawer-panel,
+.hh-drawer-top-leave-active .hh-drawer-panel,
+.hh-drawer-bottom-enter-active .hh-drawer-panel,
+.hh-drawer-bottom-leave-active .hh-drawer-panel {
+  transition: transform 0.24s ease;
 }
 
 .hh-drawer-right-enter-from,
-.hh-drawer-right-leave-to {
+.hh-drawer-right-leave-to,
+.hh-drawer-left-enter-from,
+.hh-drawer-left-leave-to,
+.hh-drawer-top-enter-from,
+.hh-drawer-top-leave-to,
+.hh-drawer-bottom-enter-from,
+.hh-drawer-bottom-leave-to {
+  opacity: 0;
+}
+
+.hh-drawer-right-enter-from .hh-drawer-panel,
+.hh-drawer-right-leave-to .hh-drawer-panel {
   transform: translateX(100%);
 }
 
-.hh-drawer-left-enter-from,
-.hh-drawer-left-leave-to {
+.hh-drawer-left-enter-from .hh-drawer-panel,
+.hh-drawer-left-leave-to .hh-drawer-panel {
   transform: translateX(-100%);
 }
 
-.hh-drawer-top-enter-from,
-.hh-drawer-top-leave-to {
+.hh-drawer-top-enter-from .hh-drawer-panel,
+.hh-drawer-top-leave-to .hh-drawer-panel {
   transform: translateY(-100%);
 }
 
-.hh-drawer-bottom-enter-from,
-.hh-drawer-bottom-leave-to {
+.hh-drawer-bottom-enter-from .hh-drawer-panel,
+.hh-drawer-bottom-leave-to .hh-drawer-panel {
   transform: translateY(100%);
 }
 </style>
