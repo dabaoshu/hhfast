@@ -1,7 +1,19 @@
-import { nextTick } from 'vue'
+import { h, nextTick } from 'vue'
 import { mount } from '@vue/test-utils'
-import { describe, expect, it } from 'vitest'
-import { HDrawer } from '../src/components/drawer'
+import { afterEach, describe, expect, it } from 'vitest'
+import {
+  closeAllDrawers,
+  drawer,
+  HDrawer,
+  HDrawerLayer,
+  openDrawer,
+} from '../src/components/drawer'
+
+afterEach(() => closeAllDrawers())
+
+async function waitLeave(): Promise<void> {
+  await new Promise((r) => setTimeout(r, 280))
+}
 
 describe('HDrawer accessibility', () => {
   it('labels the dialog, constrains its size, and restores focus after Escape', async () => {
@@ -31,7 +43,42 @@ describe('HDrawer accessibility', () => {
 
     expect(wrapper.emitted('update:open')?.at(-1)).toEqual([false])
     await wrapper.setProps({ open: false })
+    await waitLeave()
     await nextTick()
     expect(document.activeElement).toBe(opener)
+  })
+})
+
+describe('drawer command stack', () => {
+  it('opens via openDrawer and closes on Escape through HDrawerLayer', async () => {
+    mount(HDrawerLayer, { attachTo: document.body })
+    openDrawer({
+      title: 'Stack drawer',
+      content: () => h('p', 'body'),
+      showConfirm: false,
+      showCancel: false,
+    })
+    await nextTick()
+    await nextTick()
+
+    expect(document.querySelector('.hh-drawer-panel')).not.toBeNull()
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    await nextTick()
+    await waitLeave()
+    expect(document.querySelector('.hh-drawer-panel')).toBeNull()
+  })
+
+  it('respects per-record placement defaults from createDrawer factory', async () => {
+    const id = drawer.open({
+      title: 'Right default',
+      content: () => h('p', 'x'),
+      showConfirm: false,
+      showCancel: false,
+    })
+    expect(id).toBeTruthy()
+    mount(HDrawerLayer, { attachTo: document.body })
+    await nextTick()
+    expect(document.querySelector('.hh-drawer--right')).not.toBeNull()
+    closeAllDrawers()
   })
 })

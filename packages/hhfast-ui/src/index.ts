@@ -32,7 +32,20 @@ export { HTooltip, vTooltip } from "./components/tooltip";
 
 export { Splitter, SplitterPanel } from "./components/splitter";
 
-export { HDrawer } from "./components/drawer";
+export {
+  drawer,
+  createDrawer,
+  useDrawer,
+  useDrawerLayer,
+  openDrawer,
+  closeDrawer,
+  closeAllDrawers,
+  drawerList,
+  DRAWER_DEFAULTS,
+  normalizeDrawerContent,
+  HDrawer,
+  HDrawerLayer,
+} from "./components/drawer";
 
 export {
   HConfigProvider,
@@ -104,7 +117,20 @@ export type {
   SplitterPanelProps,
 } from "./components/splitter";
 
-export type { DrawerPlacement, DrawerProps } from "./components/drawer";
+export type {
+  DrawerApi,
+  DrawerPlacement,
+  DrawerProps,
+  DrawerRecord,
+  DrawerShowOptions,
+  DrawerOpenPayload,
+  DrawerConfirmPayload,
+  DrawerContentInput,
+  DrawerGlobalDefaults,
+  UseDrawerReturn,
+  UseDrawerLayerReturn,
+  HDrawerEmits,
+} from "./components/drawer";
 
 export type {
   HConfigProviderProps,

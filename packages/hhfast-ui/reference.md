@@ -16,7 +16,7 @@
 | 点击触发的轻量面板（筛选、操作菜单） | `HPopover` | `placement` / `arrow` / `overlayClassName` |
 | 悬停说明 | `HTooltip` / `v-tooltip` | 短文案提示 |
 | 对话框 / 确认 | `HModal` / `modal.confirm` | 声明式或命令式栈 |
-| 侧滑面板 | `HDrawer` | 表单、详情 |
+| 侧滑面板 / 命令式抽屉 | `HDrawer` / `drawer.open` / `HDrawerLayer` | 与 Modal 栈分离，`zIndexBase` 1100 |
 
 ## 示例：HTable 列筛选
 

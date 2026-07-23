@@ -1,6 +1,7 @@
-import type { InjectionKey, ComputedRef } from 'vue';
-import type { ToastGlobalDefaults } from '../toast';
-import type { ModalGlobalDefaults } from '../modal';
+import type { InjectionKey, ComputedRef } from 'vue'
+import type { ToastGlobalDefaults } from '../toast'
+import type { ModalGlobalDefaults } from '../modal'
+import type { DrawerGlobalDefaults } from '../drawer'
 
 /**
  * {@link HConfigProvider} 的 Props。
@@ -11,20 +12,23 @@ import type { ModalGlobalDefaults } from '../modal';
  */
 export interface HConfigProviderProps {
   /** Toast 全局默认配置覆盖 */
-  toast?: Partial<ToastGlobalDefaults> | false;
+  toast?: Partial<ToastGlobalDefaults> | false
   /** Modal 全局默认配置覆盖 */
-  modal?: Partial<ModalGlobalDefaults> | false;
+  modal?: Partial<ModalGlobalDefaults> | false
+  /** Drawer 全局默认配置覆盖 */
+  drawer?: Partial<DrawerGlobalDefaults> | false
 }
 
 /**
  * `provide` 注入的配置快照，由 {@link useHhConfig} 读取。
  */
 export interface HhConfig {
-  toast: ComputedRef<Partial<ToastGlobalDefaults> | false | undefined>;
-  modal: ComputedRef<Partial<ModalGlobalDefaults> | false | undefined>;
+  toast: ComputedRef<Partial<ToastGlobalDefaults> | false | undefined>
+  modal: ComputedRef<Partial<ModalGlobalDefaults> | false | undefined>
+  drawer: ComputedRef<Partial<DrawerGlobalDefaults> | false | undefined>
 }
 
 /**
  * ConfigProvider 的 InjectionKey。
  */
-export const HH_CONFIG_KEY: InjectionKey<HhConfig> = Symbol('HhConfig');
+export const HH_CONFIG_KEY: InjectionKey<HhConfig> = Symbol('HhConfig')
