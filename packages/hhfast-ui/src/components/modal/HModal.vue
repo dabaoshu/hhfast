@@ -151,8 +151,14 @@ watch(
 )
 
 onBeforeUnmount(() => {
-  if (registryId) unregisterHModalInstance(registryId)
+  if (registryId) {
+    unregisterHModalInstance(registryId)
+    registryId = null
+  }
   document.removeEventListener('keydown', onKeydown)
+  // Layer 等场景可能在 modelValue 仍为 true 时卸载，需在此还原焦点
+  previouslyFocused?.focus()
+  previouslyFocused = null
 })
 </script>
 

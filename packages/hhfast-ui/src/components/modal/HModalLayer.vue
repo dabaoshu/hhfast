@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * @description Modal 逻辑栈的内置渲染层组件。
+ * @description Modal 逻辑栈的内置渲染层：每层复用 HModal。
  *
  * 直接在根组件挂载即可获得开箱即用的弹层 UI：
  * ```vue
@@ -10,257 +10,33 @@
  * </template>
  * ```
  */
-import { nextTick, onBeforeUnmount, onMounted, watch } from 'vue'
+import HModal from './HModal.vue'
 import { useModalLayer } from './useModalLayer'
 
 defineOptions({ name: 'HModalLayer' })
 
-const { modalList, loadingMap, handleConfirm, handleCancel, handleMaskClick } = useModalLayer()
-
-let previouslyFocused: HTMLElement | null = null
-
-function getFocusable(container: HTMLElement): HTMLElement[] {
-  return Array.from(container.querySelectorAll<HTMLElement>(
-    'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
-  ))
-}
-
-function focusTopModal(): void {
-  const top = modalList.at(-1)
-  if (!top) return
-  const dialog = document.querySelector<HTMLElement>(`[data-modal-id="${top.id}"]`)
-  ;(dialog && (getFocusable(dialog)[0] ?? dialog))?.focus()
-}
-
-function onKeydown(event: KeyboardEvent): void {
-  const top = modalList.at(-1)
-  if (!top) return
-  if (event.key === 'Escape') {
-    event.preventDefault()
-    handleCancel(top)
-    return
-  }
-  if (event.key !== 'Tab') return
-  const dialog = document.querySelector<HTMLElement>(`[data-modal-id="${top.id}"]`)
-  if (!dialog) return
-  const focusable = getFocusable(dialog)
-  const first = focusable[0] ?? dialog
-  const last = focusable[focusable.length - 1] ?? dialog
-  if (event.shiftKey && document.activeElement === first) {
-    event.preventDefault()
-    last.focus()
-  }
-  else if (!event.shiftKey && document.activeElement === last) {
-    event.preventDefault()
-    first.focus()
-  }
-}
-
-watch(
-  () => modalList.map(item => item.id),
-  async (ids, previousIds) => {
-    if (previousIds.length === 0 && ids.length > 0) {
-      previouslyFocused = document.activeElement as HTMLElement | null
-    }
-    if (ids.length > 0) {
-      await nextTick()
-      focusTopModal()
-    }
-    else if (previousIds.length > 0) {
-      previouslyFocused?.focus()
-      previouslyFocused = null
-    }
-  },
-)
-
-onMounted(() => document.addEventListener('keydown', onKeydown))
-onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
+const { modalList, loadingMap, handleConfirm, handleCancel } = useModalLayer()
 </script>
 
 <template>
-  <Teleport to="body">
-    <div
-      v-for="item in modalList"
-      :key="item.id"
-      class="hh-modal-mask"
-      :style="{ zIndex: item.zIndex }"
-      @click.self="handleMaskClick(item)"
-    >
-      <div
-        class="hh-modal-dialog"
-        :class="[`hh-modal--${item.type}`]"
-        role="dialog"
-        aria-modal="true"
-        :aria-labelledby="`${item.id}-title`"
-        :data-modal-id="item.id"
-        tabindex="-1"
-      >
-        <div class="hh-modal-header">
-          <span :id="`${item.id}-title`" class="hh-modal-title">{{ item.title || '弹层' }}</span>
-          <button
-            type="button"
-            class="hh-modal-close-btn"
-            aria-label="关闭弹层"
-            @click="handleCancel(item)"
-          >
-            ×
-          </button>
-        </div>
-        <div class="hh-modal-body">
-          <component :is="() => item.content" />
-        </div>
-        <div
-          v-if="item.showConfirm || item.showCancel"
-          class="hh-modal-footer"
-        >
-          <button
-            v-if="item.showCancel"
-            type="button"
-            class="hh-modal-btn hh-modal-btn--cancel"
-            @click="handleCancel(item)"
-          >
-            {{ item.cancelText }}
-          </button>
-          <button
-            v-if="item.showConfirm"
-            type="button"
-            class="hh-modal-btn hh-modal-btn--confirm"
-            :class="{ 'hh-modal-btn--danger': item.type === 'danger' }"
-            :disabled="loadingMap[item.id]"
-            @click="handleConfirm(item)"
-          >
-            {{ loadingMap[item.id] ? '处理中…' : item.confirmText }}
-          </button>
-        </div>
-      </div>
-    </div>
-  </Teleport>
+  <HModal
+    v-for="item in modalList"
+    :key="item.id"
+    :model-value="true"
+    :title="item.title"
+    :type="item.type"
+    :mask-closable="item.maskClosable"
+    :show-confirm="item.showConfirm"
+    :show-cancel="item.showCancel"
+    :confirm-text="item.confirmText"
+    :cancel-text="item.cancelText"
+    :confirm-loading="!!loadingMap[item.id]"
+    :z-index="item.zIndex"
+    :class-name="item.className"
+    :style="item.style"
+    @confirm="handleConfirm(item)"
+    @cancel="handleCancel(item)"
+  >
+    <component :is="() => item.content" />
+  </HModal>
 </template>
-
-<style scoped>
-.hh-modal-mask {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.45);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.hh-modal-dialog {
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
-  min-width: 380px;
-  max-width: min(520px, calc(100vw - 48px));
-  overflow: hidden;
-  animation: hh-modal-in 0.2s ease-out;
-}
-
-@keyframes hh-modal-in {
-  from {
-    opacity: 0;
-    transform: translateY(-12px) scale(0.97);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-.hh-modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20px 24px 0;
-}
-
-.hh-modal-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: #1f1f1f;
-}
-
-.hh-modal-close-btn {
-  border: none;
-  background: transparent;
-  font-size: 20px;
-  cursor: pointer;
-  color: #999;
-  padding: 0 4px;
-  line-height: 1;
-}
-
-.hh-modal-close-btn:hover {
-  color: #333;
-}
-
-.hh-modal-body {
-  padding: 16px 24px;
-  font-size: 14px;
-  color: #555;
-  line-height: 1.6;
-  min-height: 48px;
-}
-
-.hh-modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  padding: 0 24px 20px;
-}
-
-.hh-modal-btn {
-  padding: 6px 18px;
-  font-size: 14px;
-  border-radius: 6px;
-  cursor: pointer;
-  border: 1px solid #d9d9d9;
-  background: #fff;
-  color: #333;
-  transition: all 0.15s;
-}
-
-.hh-modal-btn:hover {
-  border-color: #4096ff;
-  color: #4096ff;
-}
-
-.hh-modal-btn--confirm {
-  background: #1677ff;
-  border-color: #1677ff;
-  color: #fff;
-}
-
-.hh-modal-btn--confirm:hover {
-  background: #4096ff;
-  border-color: #4096ff;
-}
-
-.hh-modal-btn--confirm:disabled {
-  opacity: 0.65;
-  cursor: not-allowed;
-}
-
-.hh-modal-btn--danger {
-  background: #ff4d4f;
-  border-color: #ff4d4f;
-}
-
-.hh-modal-btn--danger:hover {
-  background: #ff7875;
-  border-color: #ff7875;
-}
-
-.hh-modal--warning .hh-modal-title {
-  color: #fa8c16;
-}
-
-.hh-modal--danger .hh-modal-title {
-  color: #ff4d4f;
-}
-
-.hh-modal--success .hh-modal-title {
-  color: #52c41a;
-}
-</style>
