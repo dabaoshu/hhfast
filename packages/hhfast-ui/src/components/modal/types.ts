@@ -105,6 +105,8 @@ export interface HModalProps {
   cancelText?: string;
   /** 确认按钮受控 loading */
   confirmLoading?: boolean;
+  /** 是否允许拖拽标题栏移动，默认 `false` */
+  draggable?: boolean;
   zIndex?: number;
   className?: string | string[];
   style?: string | CSSProperties;
@@ -118,4 +120,5 @@ export type HModalEmits = {
   confirm: [];
   cancel: [];
   close: [];
+  afterLeave: [];
 };

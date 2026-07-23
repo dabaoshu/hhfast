@@ -9,6 +9,7 @@ import { HModal, modal, createModal } from '@/components/modal'
 const dangerModal = createModal({ type: 'danger' })
 const declarativeOpen = ref(false)
 const declarativeLoading = ref(false)
+const draggableOpen = ref(false)
 
 function modalBasicOpen() {
   modal.open({
@@ -129,6 +130,7 @@ async function onDeclarativeConfirm() {
       <p class="pg-card-desc">v-model 控制，不入全局栈；确认需自行关闭</p>
       <div class="pg-actions">
         <button class="btn" @click="declarativeOpen = true">打开声明式 Modal</button>
+        <button class="btn" @click="draggableOpen = true">可拖拽 Modal</button>
       </div>
       <HModal
         v-model="declarativeOpen"
@@ -137,6 +139,15 @@ async function onDeclarativeConfirm() {
         @confirm="onDeclarativeConfirm"
       >
         <p>这是 HModal 声明式用法，与 modal.open 栈互不影响。</p>
+      </HModal>
+      <HModal
+        v-model="draggableOpen"
+        title="拖拽标题栏移动"
+        draggable
+        :show-confirm="false"
+        cancel-text="关闭"
+      >
+        <p>按住标题栏拖动可移动位置；关闭后位移会重置。</p>
       </HModal>
     </div>
 

@@ -45,6 +45,8 @@ async function onConfirm() {
 - 确认**不会**自动关闭，需在 `@confirm` 里自行把 `v-model` 设为 `false`。
 - 可用 `header` / `footer` / `title` / `default` slot 覆盖默认 UI。
 - 与 `modal.open` / `confirm` 互不入栈；同时打开时 ESC 响应最高 `zIndex` 的实例。
+- **`draggable`**（默认 `false`）：为 `true` 时可通过拖拽标题栏移动位置（关闭按钮除外）。
+- 开关带蒙层淡入淡出 + 面板位移缩放进出场；关闭动画播完后才真正卸载。
 
 ## 从入口导入
 

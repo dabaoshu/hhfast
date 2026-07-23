@@ -8,6 +8,11 @@ import {
   unregisterHModalInstance,
 } from '../src/components/modal/hModalRegistry'
 
+/** 等待离场 Transition（0.2s）结束 */
+async function waitLeave(): Promise<void> {
+  await new Promise((r) => setTimeout(r, 250))
+}
+
 describe('hModalRegistry', () => {
   it('treats the highest zIndex instance as top', () => {
     const low = registerHModalInstance(1000)
@@ -66,6 +71,7 @@ describe('HModal declarative', () => {
       cancelBtn?.click()
       await nextTick()
       expect(visible.value).toBe(false)
+      await waitLeave()
       expect(document.querySelector('[role="dialog"]')).toBeNull()
     }
     finally {
@@ -95,6 +101,41 @@ describe('HModal declarative', () => {
       await nextTick()
       expect(highOpen.value).toBe(false)
       expect(lowOpen.value).toBe(true)
+      await waitLeave()
+    }
+    finally {
+      wrapper.unmount()
+    }
+  })
+
+  it('moves dialog when dragging the header if draggable', async () => {
+    const visible = ref(true)
+    const wrapper = mount(
+      {
+        components: { HModal },
+        setup() {
+          return { visible }
+        },
+        template: `
+          <HModal v-model="visible" title="Drag me" draggable :show-confirm="false" :show-cancel="false" />
+        `,
+      },
+      { attachTo: document.body },
+    )
+    try {
+      await nextTick()
+      const header = document.querySelector<HTMLElement>('.hh-modal-header')
+      const dialog = document.querySelector<HTMLElement>('.hh-modal-dialog')
+      expect(header).not.toBeNull()
+      expect(dialog).not.toBeNull()
+
+      header!.dispatchEvent(new MouseEvent('mousedown', { button: 0, clientX: 100, clientY: 100, bubbles: true }))
+      document.dispatchEvent(new MouseEvent('mousemove', { clientX: 140, clientY: 130, bubbles: true }))
+      document.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }))
+      await nextTick()
+
+      expect(dialog!.style.getPropertyValue('--hh-modal-dx')).toBe('40px')
+      expect(dialog!.style.getPropertyValue('--hh-modal-dy')).toBe('30px')
     }
     finally {
       wrapper.unmount()
@@ -123,6 +164,8 @@ describe('HModalLayer accessibility', () => {
     expect(dialog?.contains(document.activeElement)).toBe(true)
 
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    await nextTick()
+    await waitLeave()
     await nextTick()
 
     expect(document.querySelector('[role="dialog"]')).toBeNull()
