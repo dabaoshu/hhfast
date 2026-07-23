@@ -1,0 +1,29 @@
+---
+description: hhfast-ui 包内组件复用约定（Popover/Tooltip/Modal 等）
+alwaysApply: true
+---
+
+# 组件复用
+
+完整说明见 `packages/hhfast-ui/reference.md`。
+
+## 必须遵守
+
+- 浮层、定位、Teleport、点外关闭、阴影：**优先复用** `HPopover` / `HTooltip` / `HModal` / `HDrawer`，不要在 Table 等复合组件里再手写一套。
+- 复合组件只负责**内容与局部样式**；壳层行为跟基础组件。
+- Teleport 到 `body` 的节点：用独立 BEM class（如 `.hh-table__filter-popover`），样式写在对应 scss **根级**，不要依赖「必须在父组件根 class 内部」。
+- 需要「完成」按钮关闭的面板：用 `HPopover` 的 `trigger="manual"` + `visible`，不要再挂全局 `document.click`。
+
+## 反例 / 正例
+
+```tsx
+// ❌ 自绘绝对定位筛选层 + 自管 document click
+<div class="hh-table__filter-wrap">
+  <div class="hh-table__filter-panel" style="position:absolute">…</div>
+</div>
+
+// ✅ 复用 HPopover
+<HPopover trigger="manual" placement="bottom-start" arrow={false} visible={open} overlayClassName="hh-table__filter-popover">
+  {{ default: () => <button>…</button>, content: () => <div class="hh-table__filter-panel">…</div> }}
+</HPopover>
+```

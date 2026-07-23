@@ -234,7 +234,8 @@ const HPopover = defineComponent({
     }
 
     function onClickOutside(e: MouseEvent): void {
-      if (props.trigger !== 'click' || !isVisible.value) {
+      // click / manual 均支持点外关闭（table 筛选等受控场景用 manual）
+      if (!isVisible.value || props.trigger === 'hover' || props.trigger === 'focus') {
         return
       }
       const target = e.target as Node

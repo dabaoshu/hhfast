@@ -3,14 +3,12 @@ import {
   defineComponent,
   ref,
   computed,
-  watch,
   watchEffect,
-  onMounted,
-  onBeforeUnmount,
   isVNode,
   type PropType,
 } from 'vue'
 import type { CSSProperties } from 'vue'
+import { HPopover } from '../popover'
 import { useTableState, normalizeTagList } from './useTableState'
 import type { TableChangeEvent, TableColumn, TablePaginationConfig, TableRowKey, TableRowSelection, TableScrollConfig } from './types'
 import './table.scss'
@@ -207,18 +205,40 @@ const HTable = defineComponent({
 
     // ---- 筛选 ----
 
-    function onFilterChange(column: TableColumn<RowRecord>, event: Event): void {
+    /**
+     * 判断筛值是否已选中。
+     */
+    function isFilterValueSelected(columnKey: string, value: TableRowKey): boolean {
+      return (state.filters.value[columnKey] ?? []).some((item) => String(item) === String(value))
+    }
+
+    /**
+     * 切换筛选项（复选 / 单选）。
+     */
+    function onFilterItemToggle(
+      column: TableColumn<RowRecord>,
+      value: TableRowKey,
+      checked: boolean,
+    ): void {
       if (!column.key) {
         return
       }
-      const target = event.target as HTMLSelectElement
       if (column.filterMultiple === false) {
-        const value = target.value
-        state.setColumnFilters(column.key, value ? [value] : [])
+        state.setColumnFilters(column.key, checked ? [value] : [])
         return
       }
-      const values = Array.from(target.selectedOptions).map((option) => option.value as TableRowKey)
-      state.setColumnFilters(column.key, values)
+      const current = [...(state.filters.value[column.key] ?? [])]
+      if (checked) {
+        if (!current.some((item) => String(item) === String(value))) {
+          current.push(value)
+        }
+        state.setColumnFilters(column.key, current)
+        return
+      }
+      state.setColumnFilters(
+        column.key,
+        current.filter((item) => String(item) !== String(value)),
+      )
     }
 
     function toggleFilterPanel(columnKey: string): void {
@@ -232,27 +252,6 @@ const HTable = defineComponent({
     function isFilterPanelOpen(columnKey: string): boolean {
       return activeFilterColumnKey.value === columnKey
     }
-
-    function onDocumentClick(event: MouseEvent): void {
-      const target = event.target as HTMLElement | null
-      if (!target) {
-        return
-      }
-      if (target.closest('.hh-table__filter-wrap')) {
-        return
-      }
-      closeFilterPanel()
-    }
-
-    // ---- 生命周期 ----
-
-    onMounted(() => {
-      document.addEventListener('click', onDocumentClick)
-    })
-
-    onBeforeUnmount(() => {
-      document.removeEventListener('click', onDocumentClick)
-    })
 
     watchEffect(() => {
       if (headerCheckboxRef.value) {
@@ -303,54 +302,86 @@ const HTable = defineComponent({
           ...column.style,
         }
 
+        const filterActive = isFilterPanelOpen(column.key)
+          || (state.filters.value[column.key]?.length ?? 0) > 0
+
         const filterPanel = (column.filters?.length ?? 0) > 0 ? (
-          <div class="hh-table__filter-wrap">
-            <button
-              type="button"
-              class={[
-                'hh-table__filter-trigger',
-                (isFilterPanelOpen(column.key) || (state.filters.value[column.key]?.length ?? 0) > 0)
-                  ? 'is-active'
-                  : '',
-              ].filter(Boolean).join(' ')}
-              title="筛选"
-              onClick={(e) => { e.stopPropagation(); toggleFilterPanel(column.key) }}
-            >
-              ⛃
-            </button>
-            {isFilterPanelOpen(column.key) && (
-              <div class="hh-table__filter-panel" onClick={(e) => e.stopPropagation()}>
-                <select
-                  class="hh-table__filter"
-                  multiple={column.filterMultiple !== false}
-                  value={(state.filters.value[column.key] ?? []).map((v) => String(v))}
-                  onChange={(e) => onFilterChange(column, e)}
+          <HPopover
+            trigger="manual"
+            placement="bottom-start"
+            arrow={false}
+            offset={8}
+            maxWidth={220}
+            zIndex={1050}
+            visible={isFilterPanelOpen(column.key)}
+            overlayClassName="hh-table__filter-popover"
+            onUpdate:visible={(open: boolean) => {
+              if (!open) closeFilterPanel()
+            }}
+          >
+            {{
+              default: () => (
+                <button
+                  type="button"
+                  class={['hh-table__filter-trigger', filterActive ? 'is-active' : ''].filter(Boolean).join(' ')}
+                  title="筛选"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    toggleFilterPanel(column.key)
+                  }}
                 >
-                  {column.filters?.map((item) => (
-                    <option key={String(item.value)} value={String(item.value)}>
-                      {item.text}
-                    </option>
-                  ))}
-                </select>
-                <div class="hh-table__filter-actions">
-                  <button
-                    type="button"
-                    class="hh-table__filter-action"
-                    onClick={() => state.setColumnFilters(column.key, [])}
-                  >
-                    清空
-                  </button>
-                  <button
-                    type="button"
-                    class="hh-table__filter-action hh-table__filter-action--primary"
-                    onClick={closeFilterPanel}
-                  >
-                    完成
-                  </button>
+                  ⛃
+                </button>
+              ),
+              content: () => (
+                <div class="hh-table__filter-panel">
+                  <div class="hh-table__filter-list" role="listbox">
+                    {column.filters?.map((item) => {
+                      const selected = isFilterValueSelected(column.key, item.value)
+                      const inputType = column.filterMultiple === false ? 'radio' : 'checkbox'
+                      return (
+                        <label
+                          key={String(item.value)}
+                          class={['hh-table__filter-item', selected ? 'is-selected' : ''].filter(Boolean).join(' ')}
+                        >
+                          <input
+                            class="hh-table__filter-check"
+                            type={inputType}
+                            name={`hh-table-filter-${column.key}`}
+                            checked={selected}
+                            onChange={(e) => {
+                              onFilterItemToggle(
+                                column,
+                                item.value,
+                                (e.target as HTMLInputElement).checked,
+                              )
+                            }}
+                          />
+                          <span class="hh-table__filter-item-text">{item.text}</span>
+                        </label>
+                      )
+                    })}
+                  </div>
+                  <div class="hh-table__filter-actions">
+                    <button
+                      type="button"
+                      class="hh-table__filter-action"
+                      onClick={() => state.setColumnFilters(column.key, [])}
+                    >
+                      清空
+                    </button>
+                    <button
+                      type="button"
+                      class="hh-table__filter-action hh-table__filter-action--primary"
+                      onClick={closeFilterPanel}
+                    >
+                      完成
+                    </button>
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
+              ),
+            }}
+          </HPopover>
         ) : null
 
         ths.push(

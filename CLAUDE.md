@@ -34,6 +34,10 @@ src/
 - **`*.reactUse.ts`**：React `useSyncExternalStore` 等适配。
 - **`*.vue`**：Vue 单文件组件。
 
+## 组件复用
+
+包内复合组件（如 Table 筛选）优先复用 `HPopover` / `HTooltip` / `HModal` / `HDrawer`，详见 [`packages/hhfast-ui/reference.md`](./packages/hhfast-ui/reference.md)。
+
 ## 代码规范
 
 ### 组件开发

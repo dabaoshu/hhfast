@@ -7,7 +7,7 @@
 - `columns` 列配置
 - TSX `render` 单元格渲染
 - 本地排序（`sorter`）
-- 本地筛选（`filters` + `onFilter`）
+- 本地筛选（`filters` + `onFilter`；筛选面板复用 `HPopover`，见包根目录 `reference.md`）
 - 分页（`pagination`）
 - 行选择（`rowSelection`）
 
@@ -84,10 +84,37 @@ const columns: TableColumn<User>[] = [
 | `dataIndex` | 取值路径，支持 `a.b.c` 或数组路径 |
 | `render` | TSX 自定义渲染，签名 `(value, record, index) => VNodeChild` |
 | `sorter` | `true` 使用默认比较，或传比较函数 |
-| `filters` | 过滤菜单项 |
-| `onFilter` | 自定义过滤逻辑 |
+| `filters` | 过滤菜单项 `{ text, value }[]`；有值时表头显示筛选按钮 |
+| `onFilter` | 自定义过滤逻辑 `(value, record) => boolean`；不传则按 `dataIndex` 等值匹配 |
+| `filterMultiple` | 是否多选，默认 `true`；`false` 时为单选 |
 | `valueType` | 默认展示类型：`text/date/datetime/array/tag` |
 | `tagColorMap` | `valueType='tag'` 时的值到颜色映射 |
+
+## 列筛选（复用 HPopover）
+
+表头筛选面板基于 **`HPopover`**（`trigger="manual"`），不再自绘绝对定位下拉：
+
+- 浮层定位 / 阴影 / Teleport / 点外关闭 → `HPopover`
+- 选项列表（checkbox / radio）与「清空 / 完成」→ Table 内容区样式 `.hh-table__filter-*`
+- 包级复用约定见 [`reference.md`](../../reference.md)
+
+```ts
+const columns: TableColumn<User>[] = [
+  {
+    key: 'city',
+    title: '城市',
+    dataIndex: 'city',
+    filters: [
+      { text: '杭州', value: '杭州' },
+      { text: '上海', value: '上海' },
+    ],
+    // filterMultiple: false, // 单选
+    onFilter: (value, record) => record.city === value,
+  },
+];
+```
+
+筛选变化会通过 `change` 事件的 `extra.action === 'filter'` 与 `filters` 字段抛出。
 
 ## `HTable` 常用 Props
 
