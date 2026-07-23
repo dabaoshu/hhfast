@@ -22,6 +22,7 @@ export {
   modalList,
   MODAL_DEFAULTS,
   normalizeModalContent,
+  HModal,
   HModalLayer,
 } from "./components/modal";
 
@@ -63,6 +64,8 @@ export type {
   ModalGlobalDefaults,
   UseModalReturn,
   UseModalLayerReturn,
+  HModalProps,
+  HModalEmits,
 } from "./components/modal";
 
 export type {

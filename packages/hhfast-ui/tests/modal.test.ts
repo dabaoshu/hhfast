@@ -1,7 +1,7 @@
-import { h, nextTick } from 'vue'
+import { h, nextTick, ref } from 'vue'
 import { mount } from '@vue/test-utils'
-import { afterEach, describe, expect, it } from 'vitest'
-import { closeAllModals, HModalLayer, openModal } from '../src/components/modal'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { closeAllModals, HModal, HModalLayer, openModal } from '../src/components/modal'
 import {
   isTopHModalInstance,
   registerHModalInstance,
@@ -29,6 +29,78 @@ describe('hModalRegistry', () => {
 })
 
 afterEach(() => closeAllModals())
+
+describe('HModal declarative', () => {
+  it('toggles with v-model and does not auto-close on confirm', async () => {
+    const visible = ref(true)
+    const onConfirm = vi.fn()
+    const wrapper = mount(
+      {
+        components: { HModal },
+        setup() {
+          return { visible, onConfirm }
+        },
+        template: `
+          <HModal v-model="visible" title="Edit" @confirm="onConfirm">
+            <p>body</p>
+          </HModal>
+        `,
+      },
+      { attachTo: document.body },
+    )
+    try {
+      await nextTick()
+      expect(document.querySelector('[role="dialog"]')).not.toBeNull()
+      expect(document.querySelector('.hh-modal-title')?.textContent).toContain('Edit')
+
+      const confirmBtn = document.querySelector<HTMLButtonElement>('.hh-modal-btn--confirm')
+      expect(confirmBtn).not.toBeNull()
+      confirmBtn?.click()
+      await nextTick()
+      expect(onConfirm).toHaveBeenCalledTimes(1)
+      expect(visible.value).toBe(true)
+      expect(document.querySelector('[role="dialog"]')).not.toBeNull()
+
+      const cancelBtn = document.querySelector<HTMLButtonElement>('.hh-modal-btn--cancel')
+      expect(cancelBtn).not.toBeNull()
+      cancelBtn?.click()
+      await nextTick()
+      expect(visible.value).toBe(false)
+      expect(document.querySelector('[role="dialog"]')).toBeNull()
+    }
+    finally {
+      wrapper.unmount()
+    }
+  })
+
+  it('closes on Escape only for the top zIndex instance', async () => {
+    const lowOpen = ref(true)
+    const highOpen = ref(true)
+    const wrapper = mount(
+      {
+        components: { HModal },
+        setup() {
+          return { lowOpen, highOpen }
+        },
+        template: `
+          <HModal v-model="lowOpen" title="Low" :z-index="1000" :show-confirm="false" :show-cancel="false" />
+          <HModal v-model="highOpen" title="High" :z-index="1100" :show-confirm="false" :show-cancel="false" />
+        `,
+      },
+      { attachTo: document.body },
+    )
+    try {
+      await nextTick()
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+      await nextTick()
+      expect(highOpen.value).toBe(false)
+      expect(lowOpen.value).toBe(true)
+    }
+    finally {
+      wrapper.unmount()
+    }
+  })
+})
 
 describe('HModalLayer accessibility', () => {
   it('labels the dialog, moves focus inside, closes on Escape, and restores focus', async () => {

@@ -1,5 +1,7 @@
 /** Modal 类型与记录结构 */
 export type {
+  HModalEmits,
+  HModalProps,
   ModalConfirmPayload,
   ModalContentInput,
   ModalGlobalDefaults,
@@ -29,5 +31,6 @@ export type { UseModalLayerReturn } from './useModalLayer';
 export { createModal, modal } from './createModal';
 export type { ModalApi } from './createModal';
 
-/** 内置渲染层组件 */
+/** 声明式通用壳与内置渲染层 */
+export { default as HModal } from './HModal.vue';
 export { default as HModalLayer } from './HModalLayer.vue';
