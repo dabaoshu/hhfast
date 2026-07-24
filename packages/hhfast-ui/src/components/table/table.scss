@@ -66,6 +66,21 @@ $hh-radius-md: 8px;
     }
   }
 
+  &__title,
+  &__footer {
+    padding: 12px 16px;
+    border-bottom: 1px solid $hh-border;
+    color: $hh-text;
+    font-weight: 600;
+  }
+
+  &__footer {
+    border-bottom: 0;
+    border-top: 1px solid $hh-border;
+    font-weight: 400;
+    color: $hh-text-secondary;
+  }
+
   &__content {
     width: 100%;
     overflow: auto;
@@ -365,6 +380,15 @@ $hh-radius-md: 8px;
       background: #fafafa;
       padding: 12px 16px;
       color: $hh-text-secondary;
+    }
+  }
+
+  &__summary {
+    td {
+      border-top: 1px solid $hh-border;
+      background: $hh-bg-header;
+      font-weight: 600;
+      padding: 10px 12px;
     }
   }
 

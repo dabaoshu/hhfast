@@ -11,7 +11,8 @@
 - 分页（`pagination`，含 `showTotal` / `showQuickJumper`）
 - 行选择（`rowSelection`，含 `getCheckboxProps` / `checkStrictly`）
 - `loading` / `rowClassName` / `onRow`
-- 树形数据与行点击详情
+- `title` / `footer` / `summary`
+- 树形数据与可展开详情（Ant Design +/− 列）
 ---
 
 ## 从入口导入
@@ -266,7 +267,26 @@ export const columns: TableColumn<UserRow>[] = [
 
 - `loading`：表体半透明遮罩 + spinner
 - `rowClassName`：字符串或函数
-- `onRow`：返回行 DOM 属性；与详情行点击共存（先处理内部 expand，再调你的 `onClick`）
+- `onRow`：返回行 DOM 属性；与 `expandRowByClick` 共存时先处理内部 expand，再调你的 `onClick`
+
+---
+
+## title / footer / summary
+
+```ts
+<HTable
+  title="用户列表"
+  :footer="() => '底部说明'"
+  :summary="(pageData) =>
+    h('tr', [
+      h('td', '合计'),
+      h('td', String(pageData.reduce((s, r) => s + Number(r.age), 0))),
+    ])
+  "
+/>
+```
+
+`summary` 渲染在 `<tfoot>`，建议自行返回完整 `<tr>` / `<td>`。
 
 ---
 

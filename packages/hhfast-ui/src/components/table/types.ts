@@ -296,6 +296,16 @@ export interface TableProps<T extends Record<string, unknown>> {
    * @param index - 绝对行下标
    */
   onRow?: (record: T, index: number) => TableRowAttrs;
+  /**
+   * 总结栏，渲染在表体下方。
+   *
+   * @param currentData - 当前页数据（扁平行 record）
+   */
+  summary?: (currentData: T[]) => VNodeChild;
+  /** 表格顶部标题。 */
+  title?: VNodeChild | (() => VNodeChild);
+  /** 表格底部。 */
+  footer?: VNodeChild | (() => VNodeChild);
   /** 空状态文案。 */
   emptyText?: string;
   /** 是否边框模式。 */

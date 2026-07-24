@@ -131,4 +131,34 @@ describe('HTable mid-tier APIs', () => {
     expect(texts).toEqual(['上海']);
     wrapper.unmount();
   });
+
+  it('renders title, footer and summary', () => {
+    const wrapper = mount(HTable, {
+      props: {
+        columns: [
+          { key: 'name', title: '姓名', dataIndex: 'name' },
+          { key: 'age', title: '年龄', dataIndex: 'age' },
+        ],
+        dataSource: [
+          { id: 1, name: '张三', city: '杭州', age: 20 },
+          { id: 2, name: '李四', city: '上海', age: 30 },
+        ],
+        rowKey: 'id',
+        pagination: false,
+        title: '用户列表',
+        footer: () => '底部说明',
+        summary: (data: Array<Record<string, unknown>>) =>
+          h('tr', [
+            h('td', '合计'),
+            h(
+              'td',
+              String(data.reduce((sum, row) => sum + Number(row.age ?? 0), 0))
+            ),
+          ]),
+      },
+    });
+    expect(wrapper.find('.hh-table__title').text()).toBe('用户列表');
+    expect(wrapper.find('.hh-table__footer').text()).toBe('底部说明');
+    expect(wrapper.find('.hh-table__summary').text()).toContain('50');
+  });
 });

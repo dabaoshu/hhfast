@@ -252,7 +252,7 @@ function handleTableChange(event: TableChangeEvent<DemoUser>) {
     <h2>Table 演示</h2>
     <p class="pg-desc">
       支持 <code>columns</code>、TSX <code>render</code>、排序、筛选、分页、行选择、
-      树形数据与行点击详情；默认内置了时间/数组/tag 的 valueType 展示处理。
+      树形数据、可展开详情（+/−）、固定列与 summary；默认内置了时间/数组/tag 的 valueType 展示处理。
     </p>
 
     <div class="pg-card">
@@ -422,6 +422,32 @@ function handleTableChange(event: TableChangeEvent<DemoUser>) {
         :scroll="{ x: 1200, y: 280 }"
         :pagination="false"
         row-key="id"
+      />
+    </div>
+
+    <div class="pg-card">
+      <h3>title / summary / footer</h3>
+      <HTable
+        bordered
+        title="本页评分合计"
+        :footer="() => 'footer 区域'"
+        :columns="[
+          { key: 'name', title: '姓名', dataIndex: 'name', width: 140 },
+          { key: 'score', title: '评分', dataIndex: 'score', width: 100, align: 'right' },
+        ]"
+        :data-source="sourceData.slice(0, 5)"
+        row-key="id"
+        :pagination="false"
+        :summary="(pageData) =>
+          h('tr', [
+            h('td', '合计'),
+            h(
+              'td',
+              { style: { textAlign: 'right' } },
+              String(pageData.reduce((sum, row) => sum + Number(row.score ?? 0), 0)),
+            ),
+          ])
+        "
       />
     </div>
 

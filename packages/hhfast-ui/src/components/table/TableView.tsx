@@ -106,6 +106,18 @@ const tableProps = {
     type: Function as PropType<(record: RowRecord, index: number) => TableRowAttrs>,
     default: undefined,
   },
+  summary: {
+    type: Function as PropType<(currentData: RowRecord[]) => unknown>,
+    default: undefined,
+  },
+  title: {
+    type: [String, Number, Object, Function] as PropType<unknown>,
+    default: undefined,
+  },
+  footer: {
+    type: [String, Number, Object, Function] as PropType<unknown>,
+    default: undefined,
+  },
   emptyText: {
     type: String as PropType<string>,
     default: '暂无数据',
@@ -982,6 +994,13 @@ const HTable = defineComponent({
 
       return (
         <div class={tableClass.value.join(' ')}>
+          {props.title != null
+            ? (
+                <div class="hh-table__title">
+                  {typeof props.title === 'function' ? (props.title as () => unknown)() : props.title}
+                </div>
+              )
+            : null}
           <div class="hh-table__content" style={contentStyle.value}>
             <table
               class="hh-table__table"
@@ -991,6 +1010,13 @@ const HTable = defineComponent({
                 <tr>{ths}</tr>
               </thead>
               <tbody>{tbodyRows}</tbody>
+              {props.summary
+                ? (
+                    <tfoot class="hh-table__summary">
+                      {props.summary(state.currentPageData.value) as JSX.Element}
+                    </tfoot>
+                  )
+                : null}
             </table>
             {props.loading
               ? (
@@ -1001,6 +1027,13 @@ const HTable = defineComponent({
                 )
               : null}
           </div>
+          {props.footer != null
+            ? (
+                <div class="hh-table__footer">
+                  {typeof props.footer === 'function' ? (props.footer as () => unknown)() : props.footer}
+                </div>
+              )
+            : null}
           {paginationBar}
         </div>
       )
