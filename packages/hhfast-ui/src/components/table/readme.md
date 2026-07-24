@@ -295,20 +295,20 @@ pagination: {
 
 ## 可展开详情行（`expandable`）
 
+对齐 Ant Design：独立展开列（`+` / `−`），与树 ▶ 互不影响。
+
 ```ts
 expandable: {
   expandedRowRender: (record, index) => h('div', `详情：${record.name}`),
+  rowExpandable: (record) => record.name !== 'Not Expandable',
+  // expandRowByClick: true, // 可选：点击整行展开
   // expandedRowKeys / defaultExpandedRowKeys / onExpand / onExpandedRowsChange
-  // rowExpandable: (record) => record.type !== 'group',
 }
 ```
 
-配置 `expandable` 后，**点击整行**切换详情（无独立 +/− 列）。以下区域点击不会触发行展开：
-
-- 选择框、树 ▶/▼、`button` / `a` / `input`
-- 带 `data-hh-table-no-row-expand` 的元素
-
-树展开与详情展开使用两套独立 keys，可同时存在。
+- `rowExpandable === false` 时不显示 +/−（占位空白）
+- 默认不通过行点击展开；设 `expandRowByClick: true` 可开启
+- 树展开与详情展开使用两套独立 keys
 
 ---
 

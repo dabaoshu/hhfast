@@ -339,9 +339,9 @@ function handleTableChange(event: TableChangeEvent<DemoUser>) {
     </div>
 
     <div class="pg-card">
-      <h3>树形 + 行点击详情 + 勾选联动</h3>
+      <h3>树形 + 可展开详情 + 勾选联动</h3>
       <p class="pg-card-desc">
-        ▶ 控制树展开；点击行展开详情；勾选默认父子联动（半选）。当前选中：
+        ▶ 控制树展开；左侧 +/− 展开详情（Ant Design 风格）；勾选默认父子联动。当前选中：
         <code>{{ treeSelectedKeys.join(', ') || '无' }}</code>
       </p>
       <HTable
@@ -359,6 +359,40 @@ function handleTableChange(event: TableChangeEvent<DemoUser>) {
         }"
         :expandable="{
           expandedRowRender: (record) => h('div', `详情：${record.name} / ${record.city}`),
+          rowExpandable: (record) => record.id !== 'be',
+        }"
+      />
+    </div>
+
+    <div class="pg-card">
+      <h3>可展开行（Ant Design 风格）</h3>
+      <p class="pg-card-desc">独立 +/− 列；部分行不可展开</p>
+      <HTable
+        bordered
+        :columns="[
+          { key: 'name', title: 'Name', dataIndex: 'name', width: 160 },
+          { key: 'age', title: 'Age', dataIndex: 'age', width: 80 },
+          { key: 'city', title: 'Address', dataIndex: 'city', width: 200 },
+          {
+            key: 'action',
+            title: 'Action',
+            width: 100,
+            render: () => h('a', { href: '#' }, 'Delete'),
+          },
+        ]"
+        :data-source="[
+          { id: 1, name: 'John Brown', age: 32, city: 'New York No. 1 Lake Park' },
+          { id: 2, name: 'Jim Green', age: 42, city: 'London No. 1 Lake Park' },
+          { id: 3, name: 'Not Expandable', age: 29, city: 'Jiangsu No. 1 Lake Park' },
+          { id: 4, name: 'Joe Black', age: 32, city: 'Sydney No. 1 Lake Park' },
+        ]"
+        row-key="id"
+        :pagination="{ pageSize: 10 }"
+        :expandable="{
+          expandedRowRender: (record) =>
+            h('div', `My name is ${record.name}, I am ${record.age} years old, living in ${record.city}.`),
+          rowExpandable: (record) => record.name !== 'Not Expandable',
+          defaultExpandedRowKeys: [2],
         }"
       />
     </div>

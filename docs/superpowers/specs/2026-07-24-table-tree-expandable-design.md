@@ -11,7 +11,7 @@ type: project
 为 `@nnnb/hhfast-ui` 的 `HTable` 增加两类能力：
 
 1. **树形表格**：`dataSource` 嵌套 `children`，行可展开/收起，指定列缩进 + 展开图标。
-2. **可展开详情行**：`expandable.expandedRowRender`，与树展开相互独立；**整行点击**切换详情。
+2. **可展开详情行**：`expandable.expandedRowRender`，与树展开相互独立；**Ant Design 风格独立 +/− 列**。
 
 ## 已确认决策
 
@@ -20,7 +20,7 @@ type: project
 | 能力范围 | 树形 children + expandable 详情行（两套独立） |
 | 数据形态 | 仅嵌套 `children`；字段名可配 `childrenColumnName`（默认 `'children'`） |
 | 树展开列 | **A2**：`expandColumnKey` 指定缩进 + ▶ 所在列；默认第一数据列 |
-| 详情展开 UI | **B3**：无独立 +/− 列；点击整行切换详情 |
+| 详情展开 UI | **Ant Design 风格**：独立 +/− 列；可选 `expandRowByClick` |
 | 树/详情并存 | 独立 keys；同一行可同时树展开 + 详情展开 |
 | 实现路径 | 在现有 HTable 数据管道上拍平可见行（方案 1） |
 | 选择 | **D**：父子勾选联动 + 半选；`checkStrictly` 可关闭联动 |
@@ -32,7 +32,7 @@ type: project
 - `useTableData`：同级排序、递归筛选、按树展开 keys 拍平
 - 新建 `useTableExpand.ts`：树展开 keys + 详情展开 keys（受控/非受控）
 - `useTableSelection.ts`：树数据下父子联动、行半选、`selectedRows` 递归收集
-- `TableView.tsx`：树控件列、整行点击详情、详情内容行、半选 checkbox
+- `TableView.tsx`：树控件列、详情展开列（+/−）、详情内容行、半选 checkbox
 - `table.scss`、`readme.md`、playground demo、导出类型
 - 最小 Vitest（拍平 / 展开 / 勾选联动）
 
@@ -42,7 +42,6 @@ type: project
 - 虚拟滚动、懒加载异步 children
 - 将 expand 并入 `change.extra.action`（用独立回调）
 - 独立 `HTableTree` 组件
-- 详情展开的独立 +/− 列 / 合并进树列按钮（B1/B2）
 
 ## 架构
 
@@ -54,8 +53,8 @@ dataSource (tree)
     ├─ flatten by treeExpandedKeys → visibleRows[{ record, level, hasChildren }]
     ├─ paginate(visibleRows)
     └─ render
+         ├─ 详情列：+/−
          ├─ expandColumnKey 列：indent + ▶/▼
-         ├─ 行点击 → 切换详情 expand keys（排除交互控件）
          └─ 若 detailExpanded → 插入 colspan 详情行
 ```
 
@@ -141,18 +140,14 @@ interface TableFlatRow<T> {
 
 | 控件 | 位置 | 行为 |
 |------|------|------|
-| 树 ▶/▼ | `expandColumnKey` 对应列内容左侧；无配置时取第一数据列 | 切换树展开；点击 **stopPropagation**，不触发详情；无 children 渲染等宽占位 |
-| 详情展开 | **无独立列**；配置了 `expandable` 且 `rowExpandable!==false` 时，点击数据行切换 | 行内交互（checkbox、链接、按钮、树 ▶）需 `stopPropagation` / 排除，避免误触 |
+| 树 ▶/▼ | `expandColumnKey` 对应列内容左侧；无配置时取第一数据列 | 切换树展开；点击 **stopPropagation**；无 children 渲染等宽占位 |
+| 详情 +/− | 选择列之后、数据列之前的独立列；仅配置了 `expandable` 时出现 | 切换详情；`rowExpandable===false` 时占位；可选 `expandRowByClick` |
 | 详情内容行 | 数据行正下方 | `<tr class="hh-table__expand-row"><td :colspan>` 渲染 `expandedRowRender` |
 | 行 checkbox 半选 | 选择列 | 联动模式下祖先部分子孙选中时显示 `indeterminate` |
 
 缩进：`padding-left: level * indentSize`（加在树控件容器上）。
 
-行点击细节（B3）：
-
-- 点击目标为选择列、树展开图标、或带 `data-hh-table-no-row-expand`（或等价）的交互区时，不切换详情。
-- 未配置 `expandable` 时，行点击无详情副作用。
-- 可选视觉：详情已展开的行可加 `hh-table__row--expanded` class（不强求背景高亮）。
+`expandRowByClick`（默认 false）：为 true 时点击数据行也可切换详情；交互控件需排除。
 
 ## 文件规划
 
@@ -175,7 +170,7 @@ Playground：`apps/playground/demos/ui/table/TableDemo.vue` 增加树表 + 行�
 ## 验收标准
 
 - 嵌套 `children` 可展开/收起；`expandColumnKey` / `defaultExpandAll` / 受控 `expandedRowKeys` 可用
-- 配置 `expandable` 后点击行可展开详情；点 ▶ / 勾选不误触；与树展开互不冲突
+- 配置 `expandable` 后出现 +/− 列展开详情；`rowExpandable` 可隐藏按钮；与树展开互不冲突
 - 同级排序、简化筛选、分页作用在可见扁平行
 - checkbox + 树数据下默认父子联动与半选；`checkStrictly: true` 可关闭；`radio` 不级联
 - 现有非树表示例行为不变（无 children / 无 expandable 时）

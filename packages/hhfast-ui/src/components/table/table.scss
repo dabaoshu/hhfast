@@ -282,6 +282,46 @@ $hh-radius-md: 8px;
     text-align: center;
   }
 
+  &__th--expand,
+  &__td--expand {
+    text-align: center;
+    width: 48px;
+  }
+
+  &__expand-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 17px;
+    height: 17px;
+    padding: 0;
+    border: 1px solid $hh-border-control;
+    border-radius: $hh-radius-sm;
+    background: $hh-bg;
+    color: $hh-text-secondary;
+    font-size: 12px;
+    line-height: 1;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+      border-color: $hh-primary;
+      color: $hh-primary;
+    }
+
+    &.is-expanded {
+      border-color: $hh-primary;
+      background: $hh-primary;
+      color: #fff;
+    }
+  }
+
+  &__expand-toggle-spacer {
+    display: inline-block;
+    width: 17px;
+    height: 17px;
+  }
+
   &__tr:hover &__td {
     background: $hh-bg-header;
   }

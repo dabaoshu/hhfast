@@ -174,27 +174,30 @@ describe('useTableSelection tree cascade', () => {
 });
 
 describe('HTable tree + expandable UI', () => {
-  it('toggles detail on row click but not on tree icon', async () => {
+  it('toggles detail via expand column button like Ant Design', async () => {
     const wrapper = mount(HTable, {
       props: {
         rowKey: 'id',
         columns: [{ key: 'name', title: '姓名', dataIndex: 'name' }],
-        dataSource: tree,
+        dataSource: [
+          { id: 'a', name: 'A' },
+          { id: 'b', name: 'B' },
+          { id: 'c', name: 'Not Expandable' },
+        ],
         expandable: {
           expandedRowRender: (record: Node) => h('div', { class: 'detail' }, record.name),
+          rowExpandable: (record: Node) => record.name !== 'Not Expandable',
         },
         pagination: false,
       },
     });
     await nextTick();
 
-    await wrapper.find('.hh-table__tree-toggle').trigger('click');
-    await nextTick();
-    expect(wrapper.findAll('.hh-table__expand-row').length).toBe(0);
+    expect(wrapper.findAll('.hh-table__expand-toggle').length).toBe(2);
+    expect(wrapper.findAll('.hh-table__expand-toggle-spacer').length).toBe(1);
 
-    const leafRow = wrapper.findAll('.hh-table__tr').find((tr) => tr.text().includes('A1'));
-    expect(leafRow).toBeTruthy();
-    await leafRow!.trigger('click');
-    expect(wrapper.find('.hh-table__expand-row .detail').text()).toBe('A1');
+    await wrapper.findAll('.hh-table__expand-toggle')[1].trigger('click');
+    expect(wrapper.find('.hh-table__expand-row .detail').text()).toBe('B');
+    expect(wrapper.find('.hh-table__expand-toggle.is-expanded').exists()).toBe(true);
   });
 });

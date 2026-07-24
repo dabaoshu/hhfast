@@ -222,8 +222,18 @@ const HTable = defineComponent({
       return resolveColumnWidthPx(props.rowSelection.columnWidth, 56)
     })
 
+    const expandColumnWidthPx = computed(() => {
+      if (!props.expandable) {
+        return 0
+      }
+      return resolveColumnWidthPx(props.expandable.columnWidth, 48)
+    })
+
     const fixedOffsets = computed(() =>
-      buildFixedColumnOffsets(state.mergedColumns.value, selectionColumnWidthPx.value)
+      buildFixedColumnOffsets(
+        state.mergedColumns.value,
+        selectionColumnWidthPx.value + expandColumnWidthPx.value,
+      )
     )
 
     const hasLeftFixedColumns = computed(
@@ -440,22 +450,28 @@ const HTable = defineComponent({
     })
 
     /**
-     * 行点击是否应切换详情（排除交互控件）。
+     * 行点击是否应切换详情（仅 expandRowByClick 时）。
      */
     function shouldToggleDetailFromClick(target: EventTarget | null): boolean {
       if (!(target instanceof Element)) {
         return true
       }
       return !target.closest(
-        'input,button,a,label,.hh-table__tree-toggle,[data-hh-table-no-row-expand]',
+        'input,button,a,label,.hh-table__tree-toggle,.hh-table__expand-toggle,[data-hh-table-no-row-expand]',
       )
     }
 
     return () => {
       const { mergedColumns, currentPageFlatRows } = state
       const selectionColCount = props.rowSelection ? 1 : 0
-      const totalColCount = mergedColumns.value.length + selectionColCount
+      const expandColCount = props.expandable ? 1 : 0
+      const totalColCount = mergedColumns.value.length + selectionColCount + expandColCount
       const indentSize = props.indentSize ?? 15
+      const expandColWidth = toStyleWidth(props.expandable?.columnWidth ?? 48)
+      const expandFixedLeft = hasLeftFixedColumns.value && Boolean(props.expandable)
+      const expandFixedLeftStyle = expandFixedLeft
+        ? { left: `${selectionColumnWidthPx.value}px` }
+        : undefined
 
       // ---- 表头 ----
       const ths: JSX.Element[] = []
@@ -468,7 +484,6 @@ const HTable = defineComponent({
               'hh-table__th',
               'hh-table__th--selection',
               selectionFixed && 'hh-table__cell--fixed-left',
-              selectionFixed && !fixedOffsets.value.leftEdgeKey && 'hh-table__cell--fixed-left-last',
             ]
               .filter(Boolean)
               .join(' ')}
@@ -488,6 +503,24 @@ const HTable = defineComponent({
               <span>{props.rowSelection.columnTitle ?? '选择'}</span>
             )}
           </th>
+        )
+      }
+
+      if (props.expandable) {
+        ths.push(
+          <th
+            class={[
+              'hh-table__th',
+              'hh-table__th--expand',
+              expandFixedLeft && 'hh-table__cell--fixed-left',
+            ]
+              .filter(Boolean)
+              .join(' ')}
+            style={{
+              width: expandColWidth,
+              ...expandFixedLeftStyle,
+            }}
+          />,
         )
       }
 
@@ -654,7 +687,6 @@ const HTable = defineComponent({
                   'hh-table__td',
                   'hh-table__td--selection',
                   selectionFixed && 'hh-table__cell--fixed-left',
-                  selectionFixed && !fixedOffsets.value.leftEdgeKey && 'hh-table__cell--fixed-left-last',
                 ]
                   .filter(Boolean)
                   .join(' ')}
@@ -682,6 +714,43 @@ const HTable = defineComponent({
                     )
                   }
                 />
+              </td>,
+            )
+          }
+
+          if (props.expandable) {
+            tds.push(
+              <td
+                class={[
+                  'hh-table__td',
+                  'hh-table__td--expand',
+                  expandFixedLeft && 'hh-table__cell--fixed-left',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+                style={expandFixedLeftStyle}
+              >
+                {rowDetailExpandable
+                  ? (
+                      <button
+                        type="button"
+                        class={[
+                          'hh-table__expand-toggle',
+                          detailOpen && 'is-expanded',
+                        ]
+                          .filter(Boolean)
+                          .join(' ')}
+                        aria-label={detailOpen ? '收起' : '展开'}
+                        aria-expanded={detailOpen}
+                        onClick={(e: MouseEvent) => {
+                          e.stopPropagation()
+                          state.toggleDetailExpand(record, absoluteIndex)
+                        }}
+                      >
+                        {detailOpen ? '−' : '+'}
+                      </button>
+                    )
+                  : <span class="hh-table__expand-toggle-spacer" />}
               </td>,
             )
           }
@@ -790,7 +859,7 @@ const HTable = defineComponent({
           const rowClass = [
             'hh-table__tr',
             detailOpen && 'hh-table__tr--expanded',
-            rowDetailExpandable && 'hh-table__tr--expandable',
+            rowDetailExpandable && props.expandable?.expandRowByClick && 'hh-table__tr--expandable',
             resolveRowClassName(record, absoluteIndex),
             userRowClass,
           ]
@@ -805,7 +874,11 @@ const HTable = defineComponent({
               style={userRowStyle as CSSProperties | undefined}
               {...restUserRowAttrs}
               onClick={(e: MouseEvent) => {
-                if (rowDetailExpandable && shouldToggleDetailFromClick(e.target)) {
+                if (
+                  props.expandable?.expandRowByClick
+                  && rowDetailExpandable
+                  && shouldToggleDetailFromClick(e.target)
+                ) {
                   state.toggleDetailExpand(record, absoluteIndex)
                 }
                 userOnClick?.(e)

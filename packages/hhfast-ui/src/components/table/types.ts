@@ -197,8 +197,15 @@ export interface TableExpandableConfig<T extends Record<string, unknown>> {
    * @param keys - 当前详情展开 keys
    */
   onExpandedRowsChange?: (keys: TableRowKey[]) => void;
-  /** 是否允许该行详情展开（含行点击），默认 true。 */
+  /** 是否允许该行显示展开按钮并展开详情，默认 true。 */
   rowExpandable?: (record: T) => boolean;
+  /**
+   * 点击行是否切换详情展开（Ant Design 同名行为）。
+   * 默认 `false`；展开列上的 +/− 始终可用。
+   */
+  expandRowByClick?: boolean;
+  /** 展开列宽度，默认 48。 */
+  columnWidth?: number | string;
 }
 
 /** 排序结果。 */
