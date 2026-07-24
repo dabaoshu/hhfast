@@ -5,24 +5,26 @@ import type {
   TableChangeEvent,
   TableColumn,
   TableFilterState,
+  TableFlatRow,
   TableProps,
   TableRowKey,
 } from './types';
 import { formatByValueType, normalizeTagList } from './tableUtils';
 import type { TableSorterState } from './tableUtils';
 import { useTableData } from './useTableData';
+import { useTableExpand } from './useTableExpand';
 import { useTableSelection } from './useTableSelection';
 
 interface UseTableStateOptions<T extends Record<string, unknown>> {
-  /** Table 鍏ュ弬銆?*/
+  /** Table 入参。 */
   props: TableProps<T>;
-  /** 閫忓嚭 `change` 浜嬩欢缁欑粍浠跺眰銆?*/
+  /** 透出 `change` 事件给组件层。 */
   emitChange?: (event: TableChangeEvent<T>) => void;
-  /** 鍚屾 `selectedRowKeys` 鍒扮粍浠朵簨浠躲€?*/
+  /** 同步 `selectedRowKeys` 到组件事件。 */
   emitSelectedRowKeys?: (keys: TableRowKey[]) => void;
 }
 
-/** `useTableState` 杩斿洖鍊笺€?*/
+/** `useTableState` 返回值。 */
 export interface UseTableStateReturn<T extends Record<string, unknown>> {
   filters: ComputedRef<TableFilterState>;
   sorter: Ref<TableSorterState>;
@@ -31,6 +33,7 @@ export interface UseTableStateReturn<T extends Record<string, unknown>> {
   total: ComputedRef<number>;
   pageCount: ComputedRef<number>;
   currentPageData: ComputedRef<T[]>;
+  currentPageFlatRows: ComputedRef<TableFlatRow<T>[]>;
   sortedData: ComputedRef<T[]>;
   mergedColumns: ComputedRef<TableColumn<T>[]>;
   paginationEnabled: ComputedRef<boolean>;
@@ -38,6 +41,8 @@ export interface UseTableStateReturn<T extends Record<string, unknown>> {
   selectedRows: ComputedRef<T[]>;
   allCurrentPageSelected: ComputedRef<boolean>;
   isCurrentPageIndeterminate: ComputedRef<boolean>;
+  treeExpandedKeys: Ref<TableRowKey[]>;
+  detailExpandedKeys: Ref<TableRowKey[]>;
   getRecordKey: (record: T, index: number) => TableRowKey;
   getColumnValue: (record: T, column: TableColumn<T>) => unknown;
   getDisplayValue: (ctx: TableCellRenderContext<T>) => unknown;
@@ -47,6 +52,12 @@ export interface UseTableStateReturn<T extends Record<string, unknown>> {
   toggleSort: (column: TableColumn<T>) => void;
   setColumnFilters: (columnKey: string, values: TableRowKey[]) => void;
   isRowChecked: (record: T, index: number) => boolean;
+  isRowIndeterminate: (record: T, index: number) => boolean;
+  isTreeExpanded: (key: TableRowKey) => boolean;
+  isDetailExpanded: (key: TableRowKey) => boolean;
+  isRowDetailExpandable: (record: T) => boolean;
+  toggleTreeExpand: (record: T, index: number) => void;
+  toggleDetailExpand: (record: T, index: number) => void;
   toggleRowSelection: (record: T, index: number, checked: boolean) => void;
   toggleAllCurrentPage: (checked: boolean) => void;
   setSelectedRowKeys: (
@@ -59,7 +70,27 @@ export interface UseTableStateReturn<T extends Record<string, unknown>> {
 const EMPTY_FILTERS: TableFilterState = {};
 
 /**
- * Table 缂栨帓灞傦細璐熻矗浜嬩欢鎷艰涓庡瓙鐘舵€佽仈鍔ㄣ€?
+ * 解析行主键。
+ */
+function resolveRecordKey<T extends Record<string, unknown>>(
+  record: T,
+  index: number,
+  rowKey: TableProps<T>['rowKey']
+): TableRowKey {
+  if (typeof rowKey === 'function') {
+    return rowKey(record);
+  }
+  if (typeof rowKey === 'string' && rowKey in record) {
+    return record[rowKey] as TableRowKey;
+  }
+  if ('key' in record) {
+    return (record.key as TableRowKey) ?? index;
+  }
+  return index;
+}
+
+/**
+ * Table 编排层：负责事件拼装与子状态联动。
  */
 export function useTableState<T extends Record<string, unknown>>(
   options: UseTableStateOptions<T>
@@ -101,12 +132,21 @@ export function useTableState<T extends Record<string, unknown>>(
     }
   );
 
+  const getRecordKey = (record: T, index: number): TableRowKey =>
+    resolveRecordKey(record, index, props.rowKey);
+
+  const expandState = useTableExpand<T>({
+    props,
+    getRecordKey,
+  });
+
   const dataState = useTableData<T>({
     props,
     filters,
     sorter,
     current,
     pageSize,
+    treeExpandedKeys: expandState.treeExpandedKeys,
   });
 
   const selectionState = useTableSelection<T>({
@@ -115,7 +155,7 @@ export function useTableState<T extends Record<string, unknown>>(
     current,
     pageSize,
     currentPageData: dataState.currentPageData,
-    getRecordKey: dataState.getRecordKey,
+    getRecordKey,
   });
 
   const buildChangeEvent = (
@@ -211,6 +251,7 @@ export function useTableState<T extends Record<string, unknown>>(
     total: dataState.total,
     pageCount: dataState.pageCount,
     currentPageData: dataState.currentPageData,
+    currentPageFlatRows: dataState.currentPageFlatRows,
     sortedData: dataState.sortedData,
     mergedColumns: dataState.mergedColumns,
     paginationEnabled: dataState.paginationEnabled,
@@ -218,7 +259,9 @@ export function useTableState<T extends Record<string, unknown>>(
     selectedRows: selectionState.selectedRows,
     allCurrentPageSelected: selectionState.allCurrentPageSelected,
     isCurrentPageIndeterminate: selectionState.isCurrentPageIndeterminate,
-    getRecordKey: dataState.getRecordKey,
+    treeExpandedKeys: expandState.treeExpandedKeys,
+    detailExpandedKeys: expandState.detailExpandedKeys,
+    getRecordKey,
     getColumnValue: dataState.getColumnValue,
     getDisplayValue,
     getRenderedCell,
@@ -227,6 +270,12 @@ export function useTableState<T extends Record<string, unknown>>(
     toggleSort,
     setColumnFilters,
     isRowChecked: selectionState.isRowChecked,
+    isRowIndeterminate: selectionState.isRowIndeterminate,
+    isTreeExpanded: expandState.isTreeExpanded,
+    isDetailExpanded: expandState.isDetailExpanded,
+    isRowDetailExpandable: expandState.isRowDetailExpandable,
+    toggleTreeExpand: expandState.toggleTreeExpand,
+    toggleDetailExpand: expandState.toggleDetailExpand,
     toggleRowSelection,
     toggleAllCurrentPage,
     setSelectedRowKeys: setSelectedRowKeysWithAction,

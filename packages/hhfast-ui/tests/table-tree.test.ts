@@ -1,4 +1,4 @@
-import { reactive, ref } from 'vue';
+import { computed, reactive, ref } from 'vue';
 import { describe, expect, it } from 'vitest';
 import {
   collectDescendantKeys,
@@ -6,6 +6,8 @@ import {
   getChildren,
 } from '../src/components/table/tableUtils';
 import { useTableData } from '../src/components/table/useTableData';
+import { useTableExpand } from '../src/components/table/useTableExpand';
+import { useTableSelection } from '../src/components/table/useTableSelection';
 import type { TableColumn } from '../src/components/table/types';
 
 interface Node extends Record<string, unknown> {
@@ -89,7 +91,82 @@ describe('useTableData tree', () => {
       pageSize: ref(10),
       treeExpandedKeys: ref(['a', 'a2']),
     });
-    // 父节点不匹配时整枝丢弃；不抬升子孙。仅根节点 B 匹配。
     expect(data.visibleRows.value.map((r) => r.record.id)).toEqual(['b']);
+  });
+});
+
+describe('useTableExpand', () => {
+  it('defaultExpandAll collects all parent keys', () => {
+    const expand = useTableExpand<Node>({
+      props: {
+        columns: [],
+        dataSource: tree,
+        rowKey: 'id',
+        defaultExpandAll: true,
+        childrenColumnName: 'children',
+      },
+      getRecordKey: (r) => r.id,
+    });
+    expect(expand.treeExpandedKeys.value.map(String).sort()).toEqual(['a', 'a2']);
+  });
+
+  it('tree and detail keys stay independent', () => {
+    const expand = useTableExpand<Node>({
+      props: {
+        columns: [],
+        dataSource: tree,
+        rowKey: 'id',
+        expandable: {
+          expandedRowRender: () => 'x',
+          defaultExpandedRowKeys: ['a1'],
+        },
+      },
+      getRecordKey: (r) => r.id,
+    });
+    expand.toggleTreeExpand(tree[0], 0);
+    expect(expand.treeExpandedKeys.value).toContain('a');
+    expect(expand.detailExpandedKeys.value).toEqual(['a1']);
+  });
+});
+
+describe('useTableSelection tree cascade', () => {
+  it('checkStrictly false cascades descendants', () => {
+    const selectedRowKeys = ref<string[]>([]);
+    const selection = useTableSelection<Node>({
+      props: {
+        columns: [],
+        dataSource: tree,
+        rowKey: 'id',
+        childrenColumnName: 'children',
+        rowSelection: { checkStrictly: false },
+      },
+      selectedRowKeys,
+      current: ref(1),
+      pageSize: ref(10),
+      currentPageData: computed(() => tree),
+      getRecordKey: (r) => r.id,
+    });
+    selection.toggleRowSelection(tree[0], 0, true);
+    expect(selectedRowKeys.value.map(String).sort()).toEqual(['a', 'a1', 'a2', 'a21']);
+  });
+
+  it('partial children yield indeterminate parent', () => {
+    const selectedRowKeys = ref<string[]>(['a1']);
+    const selection = useTableSelection<Node>({
+      props: {
+        columns: [],
+        dataSource: tree,
+        rowKey: 'id',
+        childrenColumnName: 'children',
+        rowSelection: { checkStrictly: false },
+      },
+      selectedRowKeys,
+      current: ref(1),
+      pageSize: ref(10),
+      currentPageData: computed(() => [tree[0]]),
+      getRecordKey: (r) => r.id,
+    });
+    expect(selection.isRowChecked(tree[0], 0)).toBe(false);
+    expect(selection.isRowIndeterminate(tree[0], 0)).toBe(true);
   });
 });
