@@ -10,7 +10,15 @@ import {
 import type { CSSProperties } from 'vue'
 import { HPopover } from '../popover'
 import { useTableState, normalizeTagList } from './useTableState'
-import type { TableChangeEvent, TableColumn, TablePaginationConfig, TableRowKey, TableRowSelection, TableScrollConfig } from './types'
+import type {
+  TableChangeEvent,
+  TableColumn,
+  TableExpandableConfig,
+  TablePaginationConfig,
+  TableRowKey,
+  TableRowSelection,
+  TableScrollConfig,
+} from './types'
 import './table.scss'
 
 type RowRecord = Record<string, unknown>
@@ -44,6 +52,39 @@ const tableProps = {
   },
   scroll: {
     type: Object as PropType<TableScrollConfig>,
+    default: undefined,
+  },
+  childrenColumnName: {
+    type: String as PropType<string>,
+    default: 'children',
+  },
+  indentSize: {
+    type: Number as PropType<number>,
+    default: 15,
+  },
+  expandColumnKey: {
+    type: String as PropType<string>,
+    default: undefined,
+  },
+  defaultExpandAll: Boolean,
+  expandedRowKeys: {
+    type: Array as PropType<TableRowKey[]>,
+    default: undefined,
+  },
+  defaultExpandedRowKeys: {
+    type: Array as PropType<TableRowKey[]>,
+    default: undefined,
+  },
+  onExpandedRowsChange: {
+    type: Function as PropType<(keys: TableRowKey[]) => void>,
+    default: undefined,
+  },
+  onExpand: {
+    type: Function as PropType<(expanded: boolean, record: RowRecord) => void>,
+    default: undefined,
+  },
+  expandable: {
+    type: Object as PropType<TableExpandableConfig<RowRecord>>,
     default: undefined,
   },
   emptyText: {
@@ -261,10 +302,30 @@ const HTable = defineComponent({
 
     // ---- 渲染 ----
 
+    const expandColumnKey = computed(() => {
+      if (props.expandColumnKey) {
+        return props.expandColumnKey
+      }
+      return state.mergedColumns.value[0]?.key
+    })
+
+    /**
+     * 行点击是否应切换详情（排除交互控件）。
+     */
+    function shouldToggleDetailFromClick(target: EventTarget | null): boolean {
+      if (!(target instanceof Element)) {
+        return true
+      }
+      return !target.closest(
+        'input,button,a,label,.hh-table__tree-toggle,[data-hh-table-no-row-expand]',
+      )
+    }
+
     return () => {
-      const { mergedColumns, currentPageData } = state
+      const { mergedColumns, currentPageFlatRows } = state
       const selectionColCount = props.rowSelection ? 1 : 0
       const totalColCount = mergedColumns.value.length + selectionColCount
+      const indentSize = props.indentSize ?? 15
 
       // ---- 表头 ----
       const ths: JSX.Element[] = []
@@ -404,7 +465,7 @@ const HTable = defineComponent({
       // ---- 表体 ----
       const tbodyRows: JSX.Element[] = []
 
-      if (currentPageData.value.length === 0) {
+      if (currentPageFlatRows.value.length === 0) {
         tbodyRows.push(
           <tr>
             <td class="hh-table__empty" colSpan={totalColCount}>
@@ -414,10 +475,14 @@ const HTable = defineComponent({
         )
       }
       else {
-        for (let index = 0; index < currentPageData.value.length; index++) {
-          const record = currentPageData.value[index]
+        for (let index = 0; index < currentPageFlatRows.value.length; index++) {
+          const flat = currentPageFlatRows.value[index]
+          const { record, level, hasChildren } = flat
           const absoluteIndex = getAbsoluteIndex(index)
-          const recordKey = String(state.getRecordKey(record, absoluteIndex))
+          const recordKeyValue = state.getRecordKey(record, absoluteIndex)
+          const recordKey = String(recordKeyValue)
+          const detailOpen = state.isDetailExpanded(recordKeyValue)
+          const rowDetailExpandable = Boolean(props.expandable) && state.isRowDetailExpandable(record)
           const tds: JSX.Element[] = []
 
           if (props.rowSelection) {
@@ -427,9 +492,24 @@ const HTable = defineComponent({
                   type={isCheckboxSelection.value ? 'checkbox' : 'radio'}
                   name={isCheckboxSelection.value ? undefined : 'hh-table-radio'}
                   checked={state.isRowChecked(record, absoluteIndex)}
-                  onChange={(e) => state.toggleRowSelection(record, absoluteIndex, (e.target as HTMLInputElement).checked)}
+                  ref={(el) => {
+                    if (el && isCheckboxSelection.value) {
+                      ;(el as HTMLInputElement).indeterminate = state.isRowIndeterminate(
+                        record,
+                        absoluteIndex,
+                      )
+                    }
+                  }}
+                  onClick={(e: MouseEvent) => e.stopPropagation()}
+                  onChange={(e) =>
+                    state.toggleRowSelection(
+                      record,
+                      absoluteIndex,
+                      (e.target as HTMLInputElement).checked,
+                    )
+                  }
                 />
-              </td>
+              </td>,
             )
           }
 
@@ -480,6 +560,33 @@ const HTable = defineComponent({
               cellNode = <CellContent content={cellContent as any} />
             }
 
+            const isTreeColumn = column.key === expandColumnKey.value
+            const wrappedCell = isTreeColumn
+              ? (
+                  <div
+                    class="hh-table__tree-cell"
+                    style={{ paddingLeft: `${level * indentSize}px` }}
+                  >
+                    {hasChildren
+                      ? (
+                          <button
+                            type="button"
+                            class="hh-table__tree-toggle"
+                            aria-label={state.isTreeExpanded(recordKeyValue) ? '收起' : '展开'}
+                            onClick={(e: MouseEvent) => {
+                              e.stopPropagation()
+                              state.toggleTreeExpand(record, absoluteIndex)
+                            }}
+                          >
+                            {state.isTreeExpanded(recordKeyValue) ? '▼' : '▶'}
+                          </button>
+                        )
+                      : <span class="hh-table__tree-toggle-spacer" />}
+                    {cellNode}
+                  </div>
+                )
+              : cellNode
+
             tds.push(
               <td
                 key={`${recordKey}-${column.key}`}
@@ -487,16 +594,41 @@ const HTable = defineComponent({
                 style={tdStyle}
                 title={column.ellipsis ? String(state.getColumnValue(record, column) ?? '') : undefined}
               >
-                {cellNode}
-              </td>
+                {wrappedCell}
+              </td>,
             )
           }
 
           tbodyRows.push(
-            <tr key={recordKey} class="hh-table__tr">
+            <tr
+              key={recordKey}
+              class={[
+                'hh-table__tr',
+                detailOpen && 'hh-table__tr--expanded',
+                rowDetailExpandable && 'hh-table__tr--expandable',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+              onClick={(e: MouseEvent) => {
+                if (!rowDetailExpandable || !shouldToggleDetailFromClick(e.target)) {
+                  return
+                }
+                state.toggleDetailExpand(record, absoluteIndex)
+              }}
+            >
               {tds}
-            </tr>
+            </tr>,
           )
+
+          if (detailOpen && props.expandable) {
+            tbodyRows.push(
+              <tr key={`${recordKey}-expand`} class="hh-table__expand-row">
+                <td class="hh-table__expand-td" colSpan={totalColCount}>
+                  {props.expandable.expandedRowRender(record, absoluteIndex)}
+                </td>
+              </tr>,
+            )
+          }
         }
       }
 

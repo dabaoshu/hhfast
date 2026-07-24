@@ -1,4 +1,5 @@
-import { computed, reactive, ref } from 'vue';
+import { computed, h, nextTick, reactive, ref } from 'vue';
+import { mount } from '@vue/test-utils';
 import { describe, expect, it } from 'vitest';
 import {
   collectDescendantKeys,
@@ -8,6 +9,7 @@ import {
 import { useTableData } from '../src/components/table/useTableData';
 import { useTableExpand } from '../src/components/table/useTableExpand';
 import { useTableSelection } from '../src/components/table/useTableSelection';
+import { HTable } from '../src/components/table/TableView';
 import type { TableColumn } from '../src/components/table/types';
 
 interface Node extends Record<string, unknown> {
@@ -168,5 +170,31 @@ describe('useTableSelection tree cascade', () => {
     });
     expect(selection.isRowChecked(tree[0], 0)).toBe(false);
     expect(selection.isRowIndeterminate(tree[0], 0)).toBe(true);
+  });
+});
+
+describe('HTable tree + expandable UI', () => {
+  it('toggles detail on row click but not on tree icon', async () => {
+    const wrapper = mount(HTable, {
+      props: {
+        rowKey: 'id',
+        columns: [{ key: 'name', title: '姓名', dataIndex: 'name' }],
+        dataSource: tree,
+        expandable: {
+          expandedRowRender: (record: Node) => h('div', { class: 'detail' }, record.name),
+        },
+        pagination: false,
+      },
+    });
+    await nextTick();
+
+    await wrapper.find('.hh-table__tree-toggle').trigger('click');
+    await nextTick();
+    expect(wrapper.findAll('.hh-table__expand-row').length).toBe(0);
+
+    const leafRow = wrapper.findAll('.hh-table__tr').find((tr) => tr.text().includes('A1'));
+    expect(leafRow).toBeTruthy();
+    await leafRow!.trigger('click');
+    expect(wrapper.find('.hh-table__expand-row .detail').text()).toBe('A1');
   });
 });
