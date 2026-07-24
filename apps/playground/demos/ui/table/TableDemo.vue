@@ -37,6 +37,45 @@ const currentPage = ref(1)
 const pageSize = ref(10)
 const changeLog = ref('暂无变更')
 
+interface DemoDept extends Record<string, unknown> {
+  id: string
+  name: string
+  city: string
+  children?: DemoDept[]
+}
+
+/** 树形 + 详情 + 勾选联动演示数据 */
+const treeData: DemoDept[] = [
+  {
+    id: 'tech',
+    name: '技术部',
+    city: '-',
+    children: [
+      {
+        id: 'fe',
+        name: '前端组',
+        city: '-',
+        children: [
+          { id: 'u1', name: '张三', city: '杭州' },
+          { id: 'u2', name: '李四', city: '上海' },
+        ],
+      },
+      {
+        id: 'be',
+        name: '后端组',
+        city: '-',
+        children: [{ id: 'u3', name: '王五', city: '深圳' }],
+      },
+    ],
+  },
+]
+
+const treeSelectedKeys = ref<TableRowKey[]>([])
+const treeColumns: TableColumn<DemoDept>[] = [
+  { key: 'name', title: '姓名', dataIndex: 'name', width: 220 },
+  { key: 'city', title: '城市', dataIndex: 'city', width: 120 },
+]
+
 /** props 预览控制项 */
 const uiSize = ref<'small' | 'middle' | 'large'>('middle')
 const bordered = ref(true)
@@ -204,8 +243,8 @@ function handleTableChange(event: TableChangeEvent<DemoUser>) {
   <section class="pg-section">
     <h2>Table 演示</h2>
     <p class="pg-desc">
-      支持 <code>columns</code>、TSX <code>render</code>、排序、筛选、分页、行选择；
-      默认内置了时间/数组/tag 的 valueType 展示处理。
+      支持 <code>columns</code>、TSX <code>render</code>、排序、筛选、分页、行选择、
+      树形数据与行点击详情；默认内置了时间/数组/tag 的 valueType 展示处理。
     </p>
 
     <div class="pg-card">
@@ -282,6 +321,31 @@ function handleTableChange(event: TableChangeEvent<DemoUser>) {
         row-key="id"
         @change="handleTableChange"
         @update:selected-row-keys="selectedRowKeys = $event"
+      />
+    </div>
+
+    <div class="pg-card">
+      <h3>树形 + 行点击详情 + 勾选联动</h3>
+      <p class="pg-card-desc">
+        ▶ 控制树展开；点击行展开详情；勾选默认父子联动（半选）。当前选中：
+        <code>{{ treeSelectedKeys.join(', ') || '无' }}</code>
+      </p>
+      <HTable
+        bordered
+        :columns="treeColumns"
+        :data-source="treeData"
+        row-key="id"
+        expand-column-key="name"
+        :default-expand-all="true"
+        :pagination="false"
+        :row-selection="{
+          selectedRowKeys: treeSelectedKeys,
+          checkStrictly: false,
+          onChange: (keys) => (treeSelectedKeys = keys),
+        }"
+        :expandable="{
+          expandedRowRender: (record) => h('div', `详情：${record.name} / ${record.city}`),
+        }"
       />
     </div>
 

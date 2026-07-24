@@ -240,8 +240,40 @@ export const columns: TableColumn<UserRow>[] = [
 - `selectedRowKeys`: 受控选中
 - `defaultSelectedRowKeys`: 非受控初始值
 - `onChange`: 选中变化回调
+- `checkStrictly`: 树数据下是否关闭父子联动（默认 `false` 表示联动 + 半选；`radio` 不级联）
 
 组件同时支持事件 `update:selectedRowKeys`，便于 `v-model` 风格联动。
+
+---
+
+## 树形数据
+
+- 数据使用嵌套 `children`（字段名可用 `childrenColumnName` 配置，默认 `'children'`）
+- `expandColumnKey`：缩进与 ▶/▼ 所在列；默认第一数据列
+- `indentSize`：每级缩进 px（默认 `15`）
+- `defaultExpandAll` / `expandedRowKeys` / `defaultExpandedRowKeys`
+- `onExpand` / `onExpandedRowsChange`：树展开变化（与详情展开独立）
+
+分页作用在拍平后的可见行。
+
+---
+
+## 可展开详情行（`expandable`）
+
+```ts
+expandable: {
+  expandedRowRender: (record, index) => h('div', `详情：${record.name}`),
+  // expandedRowKeys / defaultExpandedRowKeys / onExpand / onExpandedRowsChange
+  // rowExpandable: (record) => record.type !== 'group',
+}
+```
+
+配置 `expandable` 后，**点击整行**切换详情（无独立 +/− 列）。以下区域点击不会触发行展开：
+
+- 选择框、树 ▶/▼、`button` / `a` / `input`
+- 带 `data-hh-table-no-row-expand` 的元素
+
+树展开与详情展开使用两套独立 keys，可同时存在。
 
 ---
 
@@ -250,12 +282,13 @@ export const columns: TableColumn<UserRow>[] = [
 如果你需要深度自定义表格外观，可复用内部逻辑：
 
 - 排序/筛选/分页状态管理
-- 行选择与 `selectedRowKeys` 协议
+- 树拍平与两套 expand keys
+- 行选择与 `selectedRowKeys` 协议（含父子联动）
 - 默认值格式化与 `render` 回退逻辑
 
 ---
 
 ## 说明
 
-- 当前版本为中阶能力，未包含固定列、可展开行、虚拟滚动。
-- 推荐在 `playground/demos/table/TableDemo.vue` 查看完整示例。
+- 当前版本为中阶能力，未包含固定列、虚拟滚动、异步懒加载 children。
+- 推荐在 `playground/demos/ui/table/TableDemo.vue` 查看完整示例。
