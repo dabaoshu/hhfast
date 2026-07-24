@@ -1,4 +1,88 @@
-import type { TableColumn, TableSortOrder } from './types';
+import type { TableColumn, TableRowKey, TableSortOrder } from './types';
+
+/**
+ * 读取节点子列表；非数组时返回空数组。
+ *
+ * @param record - 行数据
+ * @param childrenColumnName - 子节点字段名
+ */
+export function getChildren<T extends Record<string, unknown>>(
+  record: T,
+  childrenColumnName: string
+): T[] {
+  const raw = record[childrenColumnName];
+  return Array.isArray(raw) ? (raw as T[]) : [];
+}
+
+/**
+ * 深度优先遍历树。
+ *
+ * @param nodes - 节点列表
+ * @param childrenColumnName - 子节点字段名
+ * @param visitor - 访问回调
+ * @param parent - 父节点
+ */
+export function forEachTreeNode<T extends Record<string, unknown>>(
+  nodes: T[],
+  childrenColumnName: string,
+  visitor: (node: T, parent: T | null) => void,
+  parent: T | null = null
+): void {
+  for (const node of nodes) {
+    visitor(node, parent);
+    forEachTreeNode(getChildren(node, childrenColumnName), childrenColumnName, visitor, node);
+  }
+}
+
+/**
+ * 收集全部子孙 key（不含自身）。
+ *
+ * @param record - 行数据
+ * @param childrenColumnName - 子节点字段名
+ * @param getKey - 取主键
+ */
+export function collectDescendantKeys<T extends Record<string, unknown>>(
+  record: T,
+  childrenColumnName: string,
+  getKey: (record: T) => TableRowKey
+): TableRowKey[] {
+  const keys: TableRowKey[] = [];
+  forEachTreeNode(getChildren(record, childrenColumnName), childrenColumnName, (node) => {
+    keys.push(getKey(node));
+  });
+  return keys;
+}
+
+/**
+ * 在树中按 key 查找节点。
+ *
+ * @param nodes - 节点列表
+ * @param key - 目标 key
+ * @param childrenColumnName - 子节点字段名
+ * @param getKey - 取主键
+ */
+export function findRecordByKey<T extends Record<string, unknown>>(
+  nodes: T[],
+  key: TableRowKey,
+  childrenColumnName: string,
+  getKey: (record: T) => TableRowKey
+): T | undefined {
+  for (const node of nodes) {
+    if (String(getKey(node)) === String(key)) {
+      return node;
+    }
+    const found = findRecordByKey(
+      getChildren(node, childrenColumnName),
+      key,
+      childrenColumnName,
+      getKey
+    );
+    if (found) {
+      return found;
+    }
+  }
+  return undefined;
+}
 
 /** 内部排序状态（仅维护列 key 与方向）。 */
 export interface TableSorterState {

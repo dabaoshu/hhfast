@@ -104,12 +104,53 @@ export interface TableRowSelection<T extends Record<string, unknown>> {
   /** 选择列标题。 */
   columnTitle?: string;
   /**
+   * 树数据下勾选是否严格独立。
+   * `false`（默认）：父子联动 + 半选；`true`：各行独立。
+   * 仅 `type !== 'radio'` 时生效。
+   */
+  checkStrictly?: boolean;
+  /**
    * 选择变化回调。
    *
    * @param selectedRowKeys - 当前选中 key
    * @param selectedRows - 当前选中行
    */
   onChange?: (selectedRowKeys: TableRowKey[], selectedRows: T[]) => void;
+}
+
+/** 拍平后的可见行元数据。 */
+export interface TableFlatRow<T extends Record<string, unknown>> {
+  /** 行数据。 */
+  record: T;
+  /** 树深度，根为 0。 */
+  level: number;
+  /** 是否存在子节点。 */
+  hasChildren: boolean;
+}
+
+/** 可展开详情行配置（与树展开独立）。 */
+export interface TableExpandableConfig<T extends Record<string, unknown>> {
+  /** 详情内容渲染。 */
+  expandedRowRender: (record: T, index: number) => VNodeChild;
+  /** 受控详情展开 keys。 */
+  expandedRowKeys?: TableRowKey[];
+  /** 非受控默认详情展开 keys。 */
+  defaultExpandedRowKeys?: TableRowKey[];
+  /**
+   * 单行详情展开变化。
+   *
+   * @param expanded - 是否展开
+   * @param record - 行数据
+   */
+  onExpand?: (expanded: boolean, record: T) => void;
+  /**
+   * 详情展开 keys 变化。
+   *
+   * @param keys - 当前详情展开 keys
+   */
+  onExpandedRowsChange?: (keys: TableRowKey[]) => void;
+  /** 是否允许该行详情展开（含行点击），默认 true。 */
+  rowExpandable?: (record: T) => boolean;
 }
 
 /** 排序结果。 */
@@ -157,6 +198,33 @@ export interface TableProps<T extends Record<string, unknown>> {
   scroll?: TableScrollConfig;
   /** 行选择配置。 */
   rowSelection?: TableRowSelection<T>;
+  /** 子节点字段名，默认 `'children'`。 */
+  childrenColumnName?: string;
+  /** 每级缩进 px，默认 `15`。 */
+  indentSize?: number;
+  /** 树缩进与展开图标所在列 key；默认第一数据列。 */
+  expandColumnKey?: string;
+  /** 初始是否展开全部树节点。 */
+  defaultExpandAll?: boolean;
+  /** 受控树展开 keys。 */
+  expandedRowKeys?: TableRowKey[];
+  /** 非受控默认树展开 keys。 */
+  defaultExpandedRowKeys?: TableRowKey[];
+  /**
+   * 树展开 keys 变化。
+   *
+   * @param keys - 当前树展开 keys
+   */
+  onExpandedRowsChange?: (keys: TableRowKey[]) => void;
+  /**
+   * 单行树展开变化。
+   *
+   * @param expanded - 是否展开
+   * @param record - 行数据
+   */
+  onExpand?: (expanded: boolean, record: T) => void;
+  /** 可展开详情行配置。 */
+  expandable?: TableExpandableConfig<T>;
   /** 空状态文案。 */
   emptyText?: string;
   /** 是否边框模式。 */
