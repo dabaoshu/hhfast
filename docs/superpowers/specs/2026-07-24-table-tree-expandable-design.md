@@ -141,7 +141,7 @@ interface TableFlatRow<T> {
 | 控件 | 位置 | 行为 |
 |------|------|------|
 | 树 ▶/▼ | `expandColumnKey` 对应列内容左侧；无配置时取第一数据列 | 切换树展开；点击 **stopPropagation**；无 children 渲染等宽占位 |
-| 详情 +/− | 选择列之后、数据列之前的独立列；仅配置了 `expandable` 时出现 | 切换详情；`rowExpandable===false` 时占位；可选 `expandRowByClick` |
+| 详情 +/− | 与选择框同一控制列（单元格内并排）；仅 expandable / 仅 selection 时各自单独占该列 | 切换详情；`rowExpandable===false` 时占位；可选 `expandRowByClick` |
 | 详情内容行 | 数据行正下方 | `<tr class="hh-table__expand-row"><td :colspan>` 渲染 `expandedRowRender` |
 | 行 checkbox 半选 | 选择列 | 联动模式下祖先部分子孙选中时显示 `indeterminate` |
 

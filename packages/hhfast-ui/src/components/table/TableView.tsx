@@ -228,24 +228,23 @@ const HTable = defineComponent({
     })
 
     const selectionColumnWidthPx = computed(() => {
-      if (!props.rowSelection) {
+      if (!props.rowSelection && !props.expandable) {
         return 0
       }
-      return resolveColumnWidthPx(props.rowSelection.columnWidth, 56)
-    })
-
-    const expandColumnWidthPx = computed(() => {
-      if (!props.expandable) {
-        return 0
+      if (props.rowSelection && props.expandable) {
+        return Math.max(
+          resolveColumnWidthPx(props.rowSelection.columnWidth, 56),
+          resolveColumnWidthPx(props.expandable.columnWidth, 72),
+        )
       }
-      return resolveColumnWidthPx(props.expandable.columnWidth, 48)
+      if (props.rowSelection) {
+        return resolveColumnWidthPx(props.rowSelection.columnWidth, 56)
+      }
+      return resolveColumnWidthPx(props.expandable?.columnWidth, 48)
     })
 
     const fixedOffsets = computed(() =>
-      buildFixedColumnOffsets(
-        state.mergedColumns.value,
-        selectionColumnWidthPx.value + expandColumnWidthPx.value,
-      )
+      buildFixedColumnOffsets(state.mergedColumns.value, selectionColumnWidthPx.value)
     )
 
     const hasLeftFixedColumns = computed(
@@ -475,64 +474,94 @@ const HTable = defineComponent({
 
     return () => {
       const { mergedColumns, currentPageFlatRows } = state
-      const selectionColCount = props.rowSelection ? 1 : 0
-      const expandColCount = props.expandable ? 1 : 0
-      const totalColCount = mergedColumns.value.length + selectionColCount + expandColCount
+      const hasControlColumn = Boolean(props.rowSelection || props.expandable)
+      const controlColCount = hasControlColumn ? 1 : 0
+      const totalColCount = mergedColumns.value.length + controlColCount
       const indentSize = props.indentSize ?? 15
-      const expandColWidth = toStyleWidth(props.expandable?.columnWidth ?? 48)
-      const expandFixedLeft = hasLeftFixedColumns.value && Boolean(props.expandable)
-      const expandFixedLeftStyle = expandFixedLeft
-        ? { left: `${selectionColumnWidthPx.value}px` }
-        : undefined
+      const controlFixed = hasLeftFixedColumns.value && hasControlColumn
+      const controlColWidth = toStyleWidth(
+        props.rowSelection?.columnWidth
+          ?? props.expandable?.columnWidth
+          ?? (props.rowSelection && props.expandable ? 72 : props.expandable ? 48 : 56),
+      )
+
+      /**
+       * 渲染选择框（表头 / 表体复用结构由调用方包裹）。
+       */
+      const renderExpandToggle = (
+        record: RowRecord,
+        absoluteIndex: number,
+        detailOpen: boolean,
+        rowDetailExpandable: boolean,
+      ): JSX.Element | null => {
+        if (!props.expandable) {
+          return null
+        }
+        if (!rowDetailExpandable) {
+          return <span class="hh-table__expand-toggle-spacer" />
+        }
+        return (
+          <button
+            type="button"
+            class={[
+              'hh-table__expand-toggle',
+              detailOpen && 'is-expanded',
+            ]
+              .filter(Boolean)
+              .join(' ')}
+            aria-label={detailOpen ? '收起' : '展开'}
+            aria-expanded={detailOpen}
+            onClick={(e: MouseEvent) => {
+              e.stopPropagation()
+              state.toggleDetailExpand(record, absoluteIndex)
+            }}
+          >
+            {detailOpen ? '−' : '+'}
+          </button>
+        )
+      }
 
       // ---- 表头 ----
       const ths: JSX.Element[] = []
 
-      if (props.rowSelection) {
-        const selectionFixed = hasLeftFixedColumns.value
+      if (hasControlColumn) {
         ths.push(
           <th
             class={[
               'hh-table__th',
-              'hh-table__th--selection',
-              selectionFixed && 'hh-table__cell--fixed-left',
+              'hh-table__th--control',
+              props.rowSelection && 'hh-table__th--selection',
+              props.expandable && 'hh-table__th--expand',
+              controlFixed && 'hh-table__cell--fixed-left',
+              controlFixed && !fixedOffsets.value.leftEdgeKey && 'hh-table__cell--fixed-left-last',
             ]
               .filter(Boolean)
               .join(' ')}
             style={{
-              width: toStyleWidth(props.rowSelection.columnWidth ?? 56),
-              ...(selectionFixed ? { left: 0 } : null),
+              width: controlColWidth,
+              ...(controlFixed ? { left: 0 } : null),
             }}
           >
-            {isCheckboxSelection.value ? (
-              <input
-                ref={headerCheckboxRef}
-                type="checkbox"
-                checked={state.allCurrentPageSelected.value}
-                onChange={(e) => state.toggleAllCurrentPage((e.target as HTMLInputElement).checked)}
-              />
-            ) : (
-              <span>{props.rowSelection.columnTitle ?? '选择'}</span>
-            )}
-          </th>
-        )
-      }
-
-      if (props.expandable) {
-        ths.push(
-          <th
-            class={[
-              'hh-table__th',
-              'hh-table__th--expand',
-              expandFixedLeft && 'hh-table__cell--fixed-left',
-            ]
-              .filter(Boolean)
-              .join(' ')}
-            style={{
-              width: expandColWidth,
-              ...expandFixedLeftStyle,
-            }}
-          />,
+            <div class="hh-table__control-cell">
+              {props.expandable ? <span class="hh-table__expand-toggle-spacer" /> : null}
+              {props.rowSelection
+                ? (
+                    isCheckboxSelection.value
+                      ? (
+                          <input
+                            ref={headerCheckboxRef}
+                            type="checkbox"
+                            checked={state.allCurrentPageSelected.value}
+                            onChange={(e) =>
+                              state.toggleAllCurrentPage((e.target as HTMLInputElement).checked)
+                            }
+                          />
+                        )
+                      : <span>{props.rowSelection.columnTitle ?? '选择'}</span>
+                  )
+                : null}
+            </div>
+          </th>,
         )
       }
 
@@ -690,79 +719,53 @@ const HTable = defineComponent({
           const rowDetailExpandable = Boolean(props.expandable) && state.isRowDetailExpandable(record)
           const tds: JSX.Element[] = []
 
-          if (props.rowSelection) {
-            const selectionDisabled = state.isRowSelectionDisabled(record)
-            const selectionFixed = hasLeftFixedColumns.value
+          if (hasControlColumn) {
+            const selectionDisabled = props.rowSelection
+              ? state.isRowSelectionDisabled(record)
+              : false
             tds.push(
               <td
                 class={[
                   'hh-table__td',
-                  'hh-table__td--selection',
-                  selectionFixed && 'hh-table__cell--fixed-left',
+                  'hh-table__td--control',
+                  props.rowSelection && 'hh-table__td--selection',
+                  props.expandable && 'hh-table__td--expand',
+                  controlFixed && 'hh-table__cell--fixed-left',
+                  controlFixed && !fixedOffsets.value.leftEdgeKey && 'hh-table__cell--fixed-left-last',
                 ]
                   .filter(Boolean)
                   .join(' ')}
-                style={selectionFixed ? { left: 0 } : undefined}
+                style={controlFixed ? { left: 0 } : undefined}
               >
-                <input
-                  type={isCheckboxSelection.value ? 'checkbox' : 'radio'}
-                  name={isCheckboxSelection.value ? undefined : 'hh-table-radio'}
-                  checked={state.isRowChecked(record, absoluteIndex)}
-                  disabled={selectionDisabled}
-                  ref={(el) => {
-                    if (el && isCheckboxSelection.value) {
-                      ;(el as HTMLInputElement).indeterminate = state.isRowIndeterminate(
-                        record,
-                        absoluteIndex,
+                <div class="hh-table__control-cell">
+                  {renderExpandToggle(record, absoluteIndex, detailOpen, rowDetailExpandable)}
+                  {props.rowSelection
+                    ? (
+                        <input
+                          type={isCheckboxSelection.value ? 'checkbox' : 'radio'}
+                          name={isCheckboxSelection.value ? undefined : 'hh-table-radio'}
+                          checked={state.isRowChecked(record, absoluteIndex)}
+                          disabled={selectionDisabled}
+                          ref={(el) => {
+                            if (el && isCheckboxSelection.value) {
+                              ;(el as HTMLInputElement).indeterminate = state.isRowIndeterminate(
+                                record,
+                                absoluteIndex,
+                              )
+                            }
+                          }}
+                          onClick={(e: MouseEvent) => e.stopPropagation()}
+                          onChange={(e) =>
+                            state.toggleRowSelection(
+                              record,
+                              absoluteIndex,
+                              (e.target as HTMLInputElement).checked,
+                            )
+                          }
+                        />
                       )
-                    }
-                  }}
-                  onClick={(e: MouseEvent) => e.stopPropagation()}
-                  onChange={(e) =>
-                    state.toggleRowSelection(
-                      record,
-                      absoluteIndex,
-                      (e.target as HTMLInputElement).checked,
-                    )
-                  }
-                />
-              </td>,
-            )
-          }
-
-          if (props.expandable) {
-            tds.push(
-              <td
-                class={[
-                  'hh-table__td',
-                  'hh-table__td--expand',
-                  expandFixedLeft && 'hh-table__cell--fixed-left',
-                ]
-                  .filter(Boolean)
-                  .join(' ')}
-                style={expandFixedLeftStyle}
-              >
-                {rowDetailExpandable
-                  ? (
-                      <button
-                        type="button"
-                        class={[
-                          'hh-table__expand-toggle',
-                          detailOpen && 'is-expanded',
-                        ]
-                          .filter(Boolean)
-                          .join(' ')}
-                        aria-label={detailOpen ? '收起' : '展开'}
-                        aria-expanded={detailOpen}
-                        onClick={(e: MouseEvent) => {
-                          e.stopPropagation()
-                          state.toggleDetailExpand(record, absoluteIndex)
-                        }}
-                      >
-                        {detailOpen ? '−' : '+'}
-                      </button>
-                    )
-                  : <span class="hh-table__expand-toggle-spacer" />}
+                    : null}
+                </div>
               </td>,
             )
           }

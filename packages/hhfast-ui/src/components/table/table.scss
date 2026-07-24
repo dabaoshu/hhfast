@@ -293,14 +293,21 @@ $hh-radius-md: 8px;
     text-align: center;
   }
 
-  &__td--selection {
+  &__th--selection,
+  &__td--selection,
+  &__th--expand,
+  &__td--expand,
+  &__th--control,
+  &__td--control {
     text-align: center;
   }
 
-  &__th--expand,
-  &__td--expand {
-    text-align: center;
-    width: 48px;
+  &__control-cell {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 17px;
   }
 
   &__expand-toggle {
@@ -318,6 +325,7 @@ $hh-radius-md: 8px;
     line-height: 1;
     cursor: pointer;
     transition: all 0.2s;
+    flex-shrink: 0;
 
     &:hover {
       border-color: $hh-primary;
@@ -335,6 +343,7 @@ $hh-radius-md: 8px;
     display: inline-block;
     width: 17px;
     height: 17px;
+    flex-shrink: 0;
   }
 
   &__tr:hover &__td {

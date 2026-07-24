@@ -194,7 +194,7 @@ describe('HTable tree + expandable UI', () => {
     await nextTick();
 
     expect(wrapper.findAll('.hh-table__expand-toggle').length).toBe(2);
-    expect(wrapper.findAll('.hh-table__expand-toggle-spacer').length).toBe(1);
+    expect(wrapper.findAll('tbody .hh-table__expand-toggle-spacer').length).toBe(1);
 
     await wrapper.findAll('.hh-table__expand-toggle')[1].trigger('click');
     expect(wrapper.find('.hh-table__expand-row .detail').text()).toBe('B');

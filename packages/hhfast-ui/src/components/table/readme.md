@@ -315,20 +315,20 @@ pagination: {
 
 ## 可展开详情行（`expandable`）
 
-对齐 Ant Design：独立展开列（`+` / `−`），与树 ▶ 互不影响。
+对齐 Ant Design：展开按钮与选择框共用左侧控制列（同一单元格内 `+/−` + checkbox）。
 
 ```ts
 expandable: {
   expandedRowRender: (record, index) => h('div', `详情：${record.name}`),
   rowExpandable: (record) => record.name !== 'Not Expandable',
   // expandRowByClick: true, // 可选：点击整行展开
-  // expandedRowKeys / defaultExpandedRowKeys / onExpand / onExpandedRowsChange
 }
 ```
 
-- `rowExpandable === false` 时不显示 +/−（占位空白）
+- 有 `expandable` / `rowSelection` 时合并为一列；仅其一则只显示对应控件
+- `rowExpandable === false` 时保留等宽占位，对齐其它行
 - 默认不通过行点击展开；设 `expandRowByClick: true` 可开启
-- 树展开与详情展开使用两套独立 keys
+- 树 ▶ 仍在数据列，与详情展开独立
 
 ---
 
