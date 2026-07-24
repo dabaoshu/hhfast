@@ -8,9 +8,10 @@
 - TSX `render` 单元格渲染
 - 本地排序（`sorter`）
 - 本地筛选（`filters` + `onFilter`；筛选面板复用 `HPopover`，见包根目录 `reference.md`）
-- 分页（`pagination`）
-- 行选择（`rowSelection`）
-
+- 分页（`pagination`，含 `showTotal` / `showQuickJumper`）
+- 行选择（`rowSelection`，含 `getCheckboxProps` / `checkStrictly`）
+- `loading` / `rowClassName` / `onRow`
+- 树形数据与行点击详情
 ---
 
 ## 从入口导入
@@ -87,6 +88,7 @@ const columns: TableColumn<User>[] = [
 | `filters` | 过滤菜单项 `{ text, value }[]`；有值时表头显示筛选按钮 |
 | `onFilter` | 自定义过滤逻辑 `(value, record) => boolean`；不传则按 `dataIndex` 等值匹配 |
 | `filterMultiple` | 是否多选，默认 `true`；`false` 时为单选 |
+| `filterSearch` | `true` 或自定义函数，开启筛选项搜索 |
 | `valueType` | 默认展示类型：`text/date/datetime/array/tag` |
 | `tagColorMap` | `valueType='tag'` 时的值到颜色映射 |
 
@@ -241,8 +243,39 @@ export const columns: TableColumn<UserRow>[] = [
 - `defaultSelectedRowKeys`: 非受控初始值
 - `onChange`: 选中变化回调
 - `checkStrictly`: 树数据下是否关闭父子联动（默认 `false` 表示联动 + 半选；`radio` 不级联）
+- `getCheckboxProps`: `(record) => ({ disabled?: boolean })`，禁用行不可勾选，表头全选会跳过
 
 组件同时支持事件 `update:selectedRowKeys`，便于 `v-model` 风格联动。
+
+---
+
+## loading / 行样式与事件
+
+```ts
+<HTable
+  :loading="fetching"
+  :row-class-name="(record) => record.vip ? 'is-vip' : ''"
+  :on-row="(record) => ({
+    onClick: () => console.log(record),
+  })"
+  ...
+/>
+```
+
+- `loading`：表体半透明遮罩 + spinner
+- `rowClassName`：字符串或函数
+- `onRow`：返回行 DOM 属性；与详情行点击共存（先处理内部 expand，再调你的 `onClick`）
+
+---
+
+## 分页扩展
+
+```ts
+pagination: {
+  showTotal: (total, range) => `第 ${range[0]}-${range[1]} 条 / 共 ${total} 条`,
+  showQuickJumper: true,
+}
+```
 
 ---
 

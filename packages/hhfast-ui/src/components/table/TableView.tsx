@@ -2,6 +2,7 @@
 import {
   defineComponent,
   ref,
+  reactive,
   computed,
   watchEffect,
   isVNode,
@@ -14,7 +15,9 @@ import type {
   TableChangeEvent,
   TableColumn,
   TableExpandableConfig,
+  TableFilterItem,
   TablePaginationConfig,
+  TableRowAttrs,
   TableRowKey,
   TableRowSelection,
   TableScrollConfig,
@@ -87,6 +90,17 @@ const tableProps = {
     type: Object as PropType<TableExpandableConfig<RowRecord>>,
     default: undefined,
   },
+  loading: Boolean,
+  rowClassName: {
+    type: [String, Function] as PropType<
+      string | ((record: RowRecord, index: number) => string)
+    >,
+    default: undefined,
+  },
+  onRow: {
+    type: Function as PropType<(record: RowRecord, index: number) => TableRowAttrs>,
+    default: undefined,
+  },
   emptyText: {
     type: String as PropType<string>,
     default: '暂无数据',
@@ -144,6 +158,8 @@ const HTable = defineComponent({
 
     const headerCheckboxRef = ref<HTMLInputElement | null>(null)
     const activeFilterColumnKey = ref<string | null>(null)
+    const filterSearchText = reactive<Record<string, string>>({})
+    const quickJumpPage = ref('')
 
     // ---- 计算属性 ----
 
@@ -166,15 +182,16 @@ const HTable = defineComponent({
 
     const stickyHeaderEnabled = computed(() => props.scroll?.y != null)
 
-    const tableClass = computed(() => [
-      'hh-table',
-      `hh-table--${props.size}`,
-      {
-        'hh-table--bordered': props.bordered,
-        'hh-table--fill': props.fillContainer,
-        'hh-table--sticky-header': stickyHeaderEnabled.value,
-      },
-    ])
+    const tableClass = computed(() =>
+      [
+        'hh-table',
+        `hh-table--${props.size}`,
+        props.bordered && 'hh-table--bordered',
+        props.fillContainer && 'hh-table--fill',
+        stickyHeaderEnabled.value && 'hh-table--sticky-header',
+        props.loading && 'hh-table--loading',
+      ].filter(Boolean)
+    )
 
     const contentStyle = computed(() => {
       if (!stickyHeaderEnabled.value) {
@@ -194,6 +211,24 @@ const HTable = defineComponent({
         return 0
       }
       return (state.current.value - 1) * state.pageSize.value
+    })
+
+    const paginationRange = computed<[number, number]>(() => {
+      const total = state.total.value
+      if (total === 0) {
+        return [0, 0]
+      }
+      const start = pageBaseIndex.value + 1
+      const end = Math.min(pageBaseIndex.value + state.pageSize.value, total)
+      return [start, end]
+    })
+
+    const paginationTotalText = computed(() => {
+      const showTotal = paginationConfig.value.showTotal
+      if (showTotal) {
+        return showTotal(state.total.value, paginationRange.value)
+      }
+      return `共 ${state.total.value} 条`
     })
 
     // ---- 分页页码构建 ----
@@ -287,11 +322,53 @@ const HTable = defineComponent({
     }
 
     function closeFilterPanel(): void {
+      if (activeFilterColumnKey.value) {
+        filterSearchText[activeFilterColumnKey.value] = ''
+      }
       activeFilterColumnKey.value = null
     }
 
     function isFilterPanelOpen(columnKey: string): boolean {
       return activeFilterColumnKey.value === columnKey
+    }
+
+    /**
+     * 按 filterSearch 过滤筛选项。
+     */
+    function getVisibleFilterItems(column: TableColumn<RowRecord>): TableFilterItem[] {
+      const items = column.filters ?? []
+      const search = (filterSearchText[column.key] ?? '').trim()
+      if (!search || !column.filterSearch) {
+        return items
+      }
+      if (typeof column.filterSearch === 'function') {
+        return items.filter((item) => column.filterSearch!(search, item) as boolean)
+      }
+      const lower = search.toLowerCase()
+      return items.filter((item) => item.text.toLowerCase().includes(lower))
+    }
+
+    /**
+     * 解析行 class。
+     */
+    function resolveRowClassName(record: RowRecord, absoluteIndex: number): string {
+      if (typeof props.rowClassName === 'function') {
+        return props.rowClassName(record, absoluteIndex) || ''
+      }
+      return props.rowClassName ?? ''
+    }
+
+    /**
+     * 快速跳页。
+     */
+    function commitQuickJump(): void {
+      const raw = Number(quickJumpPage.value)
+      if (!Number.isFinite(raw)) {
+        quickJumpPage.value = ''
+        return
+      }
+      state.setPage(Math.trunc(raw))
+      quickJumpPage.value = ''
     }
 
     watchEffect(() => {
@@ -396,8 +473,21 @@ const HTable = defineComponent({
               ),
               content: () => (
                 <div class="hh-table__filter-panel">
+                  {column.filterSearch
+                    ? (
+                        <input
+                          class="hh-table__filter-search"
+                          type="search"
+                          placeholder="搜索筛选项"
+                          value={filterSearchText[column.key] ?? ''}
+                          onInput={(e) => {
+                            filterSearchText[column.key] = (e.target as HTMLInputElement).value
+                          }}
+                        />
+                      )
+                    : null}
                   <div class="hh-table__filter-list" role="listbox">
-                    {column.filters?.map((item) => {
+                    {getVisibleFilterItems(column).map((item) => {
                       const selected = isFilterValueSelected(column.key, item.value)
                       const inputType = column.filterMultiple === false ? 'radio' : 'checkbox'
                       return (
@@ -422,6 +512,9 @@ const HTable = defineComponent({
                         </label>
                       )
                     })}
+                    {getVisibleFilterItems(column).length === 0
+                      ? <div class="hh-table__filter-empty">无匹配项</div>
+                      : null}
                   </div>
                   <div class="hh-table__filter-actions">
                     <button
@@ -486,12 +579,14 @@ const HTable = defineComponent({
           const tds: JSX.Element[] = []
 
           if (props.rowSelection) {
+            const selectionDisabled = state.isRowSelectionDisabled(record)
             tds.push(
               <td class="hh-table__td hh-table__td--selection">
                 <input
                   type={isCheckboxSelection.value ? 'checkbox' : 'radio'}
                   name={isCheckboxSelection.value ? undefined : 'hh-table-radio'}
                   checked={state.isRowChecked(record, absoluteIndex)}
+                  disabled={selectionDisabled}
                   ref={(el) => {
                     if (el && isCheckboxSelection.value) {
                       ;(el as HTMLInputElement).indeterminate = state.isRowIndeterminate(
@@ -599,22 +694,45 @@ const HTable = defineComponent({
             )
           }
 
+          const userRowAttrs = props.onRow?.(record, absoluteIndex) ?? {}
+          const {
+            class: userRowClass,
+            onClick: userOnClick,
+            onDblclick: userOnDblclick,
+            onContextmenu: userOnContextmenu,
+            onMouseenter: userOnMouseenter,
+            onMouseleave: userOnMouseleave,
+            style: userRowStyle,
+            ...restUserRowAttrs
+          } = userRowAttrs
+
+          const rowClass = [
+            'hh-table__tr',
+            detailOpen && 'hh-table__tr--expanded',
+            rowDetailExpandable && 'hh-table__tr--expandable',
+            resolveRowClassName(record, absoluteIndex),
+            userRowClass,
+          ]
+            .flat()
+            .filter(Boolean)
+            .join(' ')
+
           tbodyRows.push(
             <tr
               key={recordKey}
-              class={[
-                'hh-table__tr',
-                detailOpen && 'hh-table__tr--expanded',
-                rowDetailExpandable && 'hh-table__tr--expandable',
-              ]
-                .filter(Boolean)
-                .join(' ')}
+              class={rowClass}
+              style={userRowStyle as CSSProperties | undefined}
+              {...restUserRowAttrs}
               onClick={(e: MouseEvent) => {
-                if (!rowDetailExpandable || !shouldToggleDetailFromClick(e.target)) {
-                  return
+                if (rowDetailExpandable && shouldToggleDetailFromClick(e.target)) {
+                  state.toggleDetailExpand(record, absoluteIndex)
                 }
-                state.toggleDetailExpand(record, absoluteIndex)
+                userOnClick?.(e)
               }}
+              onDblclick={userOnDblclick}
+              onContextmenu={userOnContextmenu}
+              onMouseenter={userOnMouseenter}
+              onMouseleave={userOnMouseleave}
             >
               {tds}
             </tr>,
@@ -636,7 +754,7 @@ const HTable = defineComponent({
       const paginationBar = shouldShowPagination.value ? (
         <div class="hh-table__pagination">
           <div class="hh-table__pagination-left">
-            共 {state.total.value} 条
+            {paginationTotalText.value}
           </div>
           <div class="hh-table__pagination-right">
             {(paginationConfig.value.showSizeChanger ?? true) && (
@@ -680,6 +798,30 @@ const HTable = defineComponent({
             >
               下一页
             </button>
+            {paginationConfig.value.showQuickJumper
+              ? (
+                  <span class="hh-table__quick-jumper">
+                    跳至
+                    <input
+                      class="hh-table__quick-jumper-input"
+                      type="number"
+                      min={1}
+                      max={state.pageCount.value}
+                      value={quickJumpPage.value}
+                      onInput={(e) => {
+                        quickJumpPage.value = (e.target as HTMLInputElement).value
+                      }}
+                      onKeydown={(e: KeyboardEvent) => {
+                        if (e.key === 'Enter') {
+                          commitQuickJump()
+                        }
+                      }}
+                      onBlur={commitQuickJump}
+                    />
+                    页
+                  </span>
+                )
+              : null}
           </div>
         </div>
       ) : null
@@ -693,6 +835,14 @@ const HTable = defineComponent({
               </thead>
               <tbody>{tbodyRows}</tbody>
             </table>
+            {props.loading
+              ? (
+                  <div class="hh-table__loading" aria-busy="true" aria-live="polite">
+                    <span class="hh-table__loading-spinner" />
+                    <span class="hh-table__loading-text">加载中</span>
+                  </div>
+                )
+              : null}
           </div>
           {paginationBar}
         </div>

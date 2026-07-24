@@ -85,6 +85,7 @@ const enableSelection = ref(true)
 const selectionType = ref<'checkbox' | 'radio'>('checkbox')
 const enableStickyHeader = ref(false)
 const stickyHeight = ref(360)
+const tableLoading = ref(false)
 
 const columns: TableColumn<DemoUser>[] = [
   {
@@ -172,6 +173,7 @@ const columns: TableColumn<DemoUser>[] = [
       { text: '深圳', value: '深圳' },
     ],
     filterMultiple: true,
+    filterSearch: true,
     width: 160,
   },
   {
@@ -201,6 +203,9 @@ const rowSelection = computed(() => {
   return {
     type: selectionType.value,
     selectedRowKeys: selectedRowKeys.value,
+    getCheckboxProps: (record: DemoUser) => ({
+      disabled: record.status === 'offline',
+    }),
     onChange: (keys: TableRowKey[]) => {
       selectedRowKeys.value = keys
     },
@@ -209,14 +214,17 @@ const rowSelection = computed(() => {
 
 const pagination = computed(() => {
   if (!enablePagination.value) {
-    return false
+    return false as const
   }
   return {
     current: currentPage.value,
     pageSize: pageSize.value,
     showSizeChanger: true,
+    showQuickJumper: true,
     pageSizeOptions: [5, 10, 20, 50],
     hideOnSinglePage: true,
+    showTotal: (total: number, range: [number, number]) =>
+      `第 ${range[0]}-${range[1]} 条 / 共 ${total} 条`,
   }
 })
 
@@ -287,6 +295,10 @@ function handleTableChange(event: TableChangeEvent<DemoUser>) {
           <input v-model="showData" type="checkbox" />
         </label>
         <label class="pg-prop-item">
+          <span>loading</span>
+          <input v-model="tableLoading" type="checkbox" />
+        </label>
+        <label class="pg-prop-item">
           <span>stickyHeader</span>
           <input v-model="enableStickyHeader" type="checkbox" />
         </label>
@@ -313,11 +325,13 @@ function handleTableChange(event: TableChangeEvent<DemoUser>) {
         :bordered="bordered"
         :size="uiSize"
         :fill-container="fillContainer"
+        :loading="tableLoading"
         :columns="columns"
         :data-source="previewData"
         :scroll="previewScroll"
         :row-selection="rowSelection"
         :pagination="pagination"
+        :row-class-name="(record) => (record.status === 'offline' ? 'is-offline' : '')"
         row-key="id"
         @change="handleTableChange"
         @update:selected-row-keys="selectedRowKeys = $event"

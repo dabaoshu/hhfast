@@ -29,6 +29,7 @@ export interface UseTableSelectionReturn<T extends Record<string, unknown>> {
   isCurrentPageIndeterminate: ComputedRef<boolean>;
   isRowChecked: (record: T, index: number) => boolean;
   isRowIndeterminate: (record: T, index: number) => boolean;
+  isRowSelectionDisabled: (record: T) => boolean;
   setSelectedRowKeys: (keys: TableRowKey[]) => TableSelectionPayload<T>;
   toggleRowSelection: (record: T, index: number, checked: boolean) => TableSelectionPayload<T>;
   toggleAllCurrentPage: (checked: boolean) => TableSelectionPayload<T> | undefined;
@@ -47,6 +48,9 @@ export function useTableSelection<T extends Record<string, unknown>>(
   /** 默认联动；显式 `true` 时关闭。 */
   const checkStrictly = (): boolean => props.rowSelection?.checkStrictly === true;
   const recordKeyOf = (record: T): TableRowKey => getRecordKey(record, 0);
+
+  const isRowSelectionDisabled = (record: T): boolean =>
+    Boolean(props.rowSelection?.getCheckboxProps?.(record)?.disabled);
 
   watch(
     () => props.rowSelection?.selectedRowKeys,
@@ -109,23 +113,30 @@ export function useTableSelection<T extends Record<string, unknown>>(
     return selectedCount > 0 && selectedCount < descendants.length;
   };
 
+  const enabledPageRecords = computed(() =>
+    currentPageData.value
+      .map((record, index) => ({
+        record,
+        index: (current.value - 1) * pageSize.value + index,
+      }))
+      .filter(({ record }) => !isRowSelectionDisabled(record))
+  );
+
   const allCurrentPageSelected = computed<boolean>(() => {
-    if (!props.rowSelection || currentPageData.value.length === 0) {
+    if (!props.rowSelection || enabledPageRecords.value.length === 0) {
       return false;
     }
-    return currentPageData.value.every((record, index) =>
-      isRowChecked(record, (current.value - 1) * pageSize.value + index)
-    );
+    return enabledPageRecords.value.every(({ record, index }) => isRowChecked(record, index));
   });
 
   const isCurrentPageIndeterminate = computed<boolean>(() => {
-    if (!props.rowSelection || currentPageData.value.length === 0) {
+    if (!props.rowSelection || enabledPageRecords.value.length === 0) {
       return false;
     }
-    const selectedCount = currentPageData.value.reduce((count, record, index) => {
-      return count + (isRowChecked(record, (current.value - 1) * pageSize.value + index) ? 1 : 0);
+    const selectedCount = enabledPageRecords.value.reduce((count, { record, index }) => {
+      return count + (isRowChecked(record, index) ? 1 : 0);
     }, 0);
-    return selectedCount > 0 && selectedCount < currentPageData.value.length;
+    return selectedCount > 0 && selectedCount < enabledPageRecords.value.length;
   });
 
   const buildPayload = (next: TableRowKey[]): TableSelectionPayload<T> => ({
@@ -172,6 +183,10 @@ export function useTableSelection<T extends Record<string, unknown>>(
     index: number,
     checked: boolean
   ): TableSelectionPayload<T> => {
+    if (isRowSelectionDisabled(record)) {
+      return buildPayload(props.rowSelection?.selectedRowKeys ?? selectedRowKeys.value);
+    }
+
     const key = getRecordKey(record, index);
     const rowSelection = props.rowSelection;
     const currentKeys = (rowSelection?.selectedRowKeys ?? selectedRowKeys.value).slice();
@@ -205,11 +220,14 @@ export function useTableSelection<T extends Record<string, unknown>>(
       return undefined;
     }
 
+    const enabled = enabledPageRecords.value;
+    if (enabled.length === 0) {
+      return undefined;
+    }
+
     if (checkStrictly()) {
       const currentKeys = (rowSelection.selectedRowKeys ?? selectedRowKeys.value).slice();
-      const pageKeys = currentPageData.value.map((record, index) =>
-        getRecordKey(record, (current.value - 1) * pageSize.value + index)
-      );
+      const pageKeys = enabled.map(({ record, index }) => getRecordKey(record, index));
       const pageSet = new Set(pageKeys.map((item) => String(item)));
       const next = checked
         ? Array.from(
@@ -220,7 +238,7 @@ export function useTableSelection<T extends Record<string, unknown>>(
     }
 
     let keys = (rowSelection.selectedRowKeys ?? selectedRowKeys.value).slice();
-    for (const record of currentPageData.value) {
+    for (const { record } of enabled) {
       const affected = [
         recordKeyOf(record),
         ...collectDescendantKeys(record, childrenColumnName(), recordKeyOf),
@@ -241,6 +259,7 @@ export function useTableSelection<T extends Record<string, unknown>>(
     isCurrentPageIndeterminate,
     isRowChecked,
     isRowIndeterminate,
+    isRowSelectionDisabled,
     setSelectedRowKeys,
     toggleRowSelection,
     toggleAllCurrentPage,

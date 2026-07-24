@@ -62,6 +62,11 @@ export interface TableColumn<T extends Record<string, unknown>> {
   onFilter?: (value: TableRowKey, record: T) => boolean;
   /** 是否多选筛选。 */
   filterMultiple?: boolean;
+  /**
+   * 筛选菜单是否可搜索。
+   * `true` 时按 `text` 包含匹配；也可传自定义匹配函数。
+   */
+  filterSearch?: boolean | ((input: string, item: TableFilterItem) => boolean);
 }
 
 /** 分页配置。 */
@@ -80,6 +85,33 @@ export interface TablePaginationConfig {
   showSizeChanger?: boolean;
   /** 可选 pageSize。 */
   pageSizeOptions?: number[];
+  /**
+   * 自定义总量文案。
+   *
+   * @param total - 总条数
+   * @param range - 当前页起止（1-based），`[start, end]`
+   */
+  showTotal?: (total: number, range: [number, number]) => string;
+  /** 是否显示页码快速跳转。 */
+  showQuickJumper?: boolean;
+}
+
+/** 行选择框属性。 */
+export interface TableCheckboxProps {
+  /** 是否禁用。 */
+  disabled?: boolean;
+}
+
+/** 行 DOM 属性（由 `onRow` 返回）。 */
+export interface TableRowAttrs {
+  class?: string | string[] | Record<string, boolean>;
+  style?: CSSProperties | string;
+  onClick?: (event: MouseEvent) => void;
+  onDblclick?: (event: MouseEvent) => void;
+  onContextmenu?: (event: MouseEvent) => void;
+  onMouseenter?: (event: MouseEvent) => void;
+  onMouseleave?: (event: MouseEvent) => void;
+  [key: string]: unknown;
 }
 
 /** 滚动配置。 */
@@ -109,6 +141,12 @@ export interface TableRowSelection<T extends Record<string, unknown>> {
    * 仅 `type !== 'radio'` 时生效。
    */
   checkStrictly?: boolean;
+  /**
+   * 选择框默认属性（如禁用）。
+   *
+   * @param record - 行数据
+   */
+  getCheckboxProps?: (record: T) => TableCheckboxProps;
   /**
    * 选择变化回调。
    *
@@ -225,6 +263,22 @@ export interface TableProps<T extends Record<string, unknown>> {
   onExpand?: (expanded: boolean, record: T) => void;
   /** 可展开详情行配置。 */
   expandable?: TableExpandableConfig<T>;
+  /** 加载中遮罩。 */
+  loading?: boolean;
+  /**
+   * 行 class。
+   *
+   * @param record - 行数据
+   * @param index - 绝对行下标
+   */
+  rowClassName?: string | ((record: T, index: number) => string);
+  /**
+   * 设置行属性（事件 / class / style 等）。
+   *
+   * @param record - 行数据
+   * @param index - 绝对行下标
+   */
+  onRow?: (record: T, index: number) => TableRowAttrs;
   /** 空状态文案。 */
   emptyText?: string;
   /** 是否边框模式。 */

@@ -53,6 +53,7 @@ export interface UseTableStateReturn<T extends Record<string, unknown>> {
   setColumnFilters: (columnKey: string, values: TableRowKey[]) => void;
   isRowChecked: (record: T, index: number) => boolean;
   isRowIndeterminate: (record: T, index: number) => boolean;
+  isRowSelectionDisabled: (record: T) => boolean;
   isTreeExpanded: (key: TableRowKey) => boolean;
   isDetailExpanded: (key: TableRowKey) => boolean;
   isRowDetailExpandable: (record: T) => boolean;
@@ -271,6 +272,7 @@ export function useTableState<T extends Record<string, unknown>>(
     setColumnFilters,
     isRowChecked: selectionState.isRowChecked,
     isRowIndeterminate: selectionState.isRowIndeterminate,
+    isRowSelectionDisabled: selectionState.isRowSelectionDisabled,
     isTreeExpanded: expandState.isTreeExpanded,
     isDetailExpanded: expandState.isDetailExpanded,
     isRowDetailExpandable: expandState.isRowDetailExpandable,
