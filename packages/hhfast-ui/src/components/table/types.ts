@@ -36,6 +36,11 @@ export interface TableColumn<T extends Record<string, unknown>> {
   dataIndex?: TableDataIndex<T>;
   /** 列宽。 */
   width?: number | string;
+  /**
+   * 固定列。
+   * `true` / `'left'` / `'start'` 固定左侧；`'right'` / `'end'` 固定右侧。
+   */
+  fixed?: boolean | 'left' | 'right' | 'start' | 'end';
   /** 对齐方式。 */
   align?: TableAlign;
   /** 列 class。 */
@@ -116,6 +121,11 @@ export interface TableRowAttrs {
 
 /** 滚动配置。 */
 export interface TableScrollConfig {
+  /**
+   * 表体横向最小宽度；与固定列配合使用。
+   * 支持数字（px）与任意合法 CSS 宽度值。
+   */
+  x?: number | string;
   /**
    * 表体可视高度，设置后启用固定表头 + 表体滚动。
    * 支持数字（px）与任意合法 CSS 高度值。

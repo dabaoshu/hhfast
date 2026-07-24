@@ -83,6 +83,8 @@ const columns: TableColumn<User>[] = [
 | `key` | 列唯一标识 |
 | `title` | 列标题 |
 | `dataIndex` | 取值路径，支持 `a.b.c` 或数组路径 |
+| `width` | 列宽；固定列建议显式设置 |
+| `fixed` | 固定列：`true` / `left` / `start` 或 `right` / `end` |
 | `render` | TSX 自定义渲染，签名 `(value, record, index) => VNodeChild` |
 | `sorter` | `true` 使用默认比较，或传比较函数 |
 | `filters` | 过滤菜单项 `{ text, value }[]`；有值时表头显示筛选按钮 |
@@ -323,5 +325,6 @@ expandable: {
 
 ## 说明
 
-- 当前版本为中阶能力，未包含固定列、虚拟滚动、异步懒加载 children。
+- 当前版本为中阶能力，未包含虚拟滚动、异步懒加载 children。
+- 固定列：`column.fixed` + `scroll.x`（sticky）；固定列建议声明 `width`。
 - 推荐在 `playground/demos/ui/table/TableDemo.vue` 查看完整示例。

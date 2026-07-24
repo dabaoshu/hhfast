@@ -1,5 +1,95 @@
 import type { TableColumn, TableRowKey, TableSortOrder } from './types';
 
+/** 固定列方向。 */
+export type TableFixedSide = 'left' | 'right' | null;
+
+/**
+ * 规范化列固定方向。
+ *
+ * @param fixed - 列 fixed 配置
+ */
+export function normalizeColumnFixed(
+  fixed?: boolean | 'left' | 'right' | 'start' | 'end'
+): TableFixedSide {
+  if (fixed === true || fixed === 'left' || fixed === 'start') {
+    return 'left';
+  }
+  if (fixed === 'right' || fixed === 'end') {
+    return 'right';
+  }
+  return null;
+}
+
+/**
+ * 将列宽解析为 px 数字（用于 sticky 偏移）。
+ *
+ * @param width - 列宽
+ * @param fallback - 缺省宽度
+ */
+export function resolveColumnWidthPx(
+  width: number | string | undefined,
+  fallback = 120
+): number {
+  if (typeof width === 'number' && Number.isFinite(width)) {
+    return width;
+  }
+  if (typeof width === 'string') {
+    const matched = width.trim().match(/^(\d+(?:\.\d+)?)px$/i);
+    if (matched) {
+      return Number(matched[1]);
+    }
+    const asNumber = Number(width);
+    if (Number.isFinite(asNumber)) {
+      return asNumber;
+    }
+  }
+  return fallback;
+}
+
+/**
+ * 计算左/右固定列的 sticky 偏移（不含选择列）。
+ *
+ * @param columns - 列定义
+ * @param selectionWidth - 选择列宽度（无选择列传 0）
+ */
+export function buildFixedColumnOffsets<T extends Record<string, unknown>>(
+  columns: TableColumn<T>[],
+  selectionWidth = 0
+): {
+  leftOffsets: Record<string, number>;
+  rightOffsets: Record<string, number>;
+  leftEdgeKey: string | null;
+  rightEdgeKey: string | null;
+} {
+  const leftOffsets: Record<string, number> = {};
+  const rightOffsets: Record<string, number> = {};
+  let leftCursor = selectionWidth;
+  let leftEdgeKey: string | null = null;
+
+  for (const column of columns) {
+    if (normalizeColumnFixed(column.fixed) !== 'left') {
+      continue;
+    }
+    leftOffsets[column.key] = leftCursor;
+    leftCursor += resolveColumnWidthPx(column.width);
+    leftEdgeKey = column.key;
+  }
+
+  let rightCursor = 0;
+  let rightEdgeKey: string | null = null;
+  for (let i = columns.length - 1; i >= 0; i -= 1) {
+    const column = columns[i];
+    if (normalizeColumnFixed(column.fixed) !== 'right') {
+      continue;
+    }
+    rightOffsets[column.key] = rightCursor;
+    rightCursor += resolveColumnWidthPx(column.width);
+    rightEdgeKey = column.key;
+  }
+
+  return { leftOffsets, rightOffsets, leftEdgeKey, rightEdgeKey };
+}
+
 /**
  * 读取节点子列表；非数组时返回空数组。
  *

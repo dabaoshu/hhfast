@@ -84,6 +84,39 @@ $hh-radius-md: 8px;
     vertical-align: top;
   }
 
+  &__cell--fixed-left,
+  &__cell--fixed-right {
+    position: sticky;
+    z-index: 2;
+    background: $hh-bg;
+  }
+
+  &__th#{&}__cell--fixed-left,
+  &__th#{&}__cell--fixed-right {
+    z-index: 6;
+    background: $hh-bg-header;
+  }
+
+  &__cell--fixed-left-last::after,
+  &__cell--fixed-right-first::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: -1px;
+    width: 8px;
+    pointer-events: none;
+  }
+
+  &__cell--fixed-left-last::after {
+    right: -8px;
+    box-shadow: inset 8px 0 8px -8px rgba(0, 0, 0, 0.12);
+  }
+
+  &__cell--fixed-right-first::after {
+    left: -8px;
+    box-shadow: inset -8px 0 8px -8px rgba(0, 0, 0, 0.12);
+  }
+
   &__th-inner {
     display: flex;
     gap: 6px;

@@ -11,6 +11,11 @@ import {
 import type { CSSProperties } from 'vue'
 import { HPopover } from '../popover'
 import { useTableState, normalizeTagList } from './useTableState'
+import {
+  buildFixedColumnOffsets,
+  normalizeColumnFixed,
+  resolveColumnWidthPx,
+} from './tableUtils'
 import type {
   TableChangeEvent,
   TableColumn,
@@ -194,14 +199,36 @@ const HTable = defineComponent({
     )
 
     const contentStyle = computed(() => {
-      if (!stickyHeaderEnabled.value) {
+      const style: CSSProperties = {}
+      if (stickyHeaderEnabled.value) {
+        const yValue = props.scroll?.y
+        style.maxHeight = typeof yValue === 'number' ? `${yValue}px` : yValue
+      }
+      return Object.keys(style).length ? style : undefined
+    })
+
+    const tableMinWidth = computed(() => {
+      const x = props.scroll?.x
+      if (x == null) {
         return undefined
       }
-      const yValue = props.scroll?.y
-      return {
-        maxHeight: typeof yValue === 'number' ? `${yValue}px` : yValue,
-      } as CSSProperties
+      return typeof x === 'number' ? `${x}px` : x
     })
+
+    const selectionColumnWidthPx = computed(() => {
+      if (!props.rowSelection) {
+        return 0
+      }
+      return resolveColumnWidthPx(props.rowSelection.columnWidth, 56)
+    })
+
+    const fixedOffsets = computed(() =>
+      buildFixedColumnOffsets(state.mergedColumns.value, selectionColumnWidthPx.value)
+    )
+
+    const hasLeftFixedColumns = computed(
+      () => Object.keys(fixedOffsets.value.leftOffsets).length > 0
+    )
 
     const isCheckboxSelection = computed(() => props.rowSelection?.type !== 'radio')
     const pageSizeOptions = computed(() => paginationConfig.value.pageSizeOptions ?? [10, 20, 50, 100])
@@ -371,6 +398,32 @@ const HTable = defineComponent({
       quickJumpPage.value = ''
     }
 
+    /**
+     * 固定列单元格 class / style。
+     */
+    function getFixedCellProps(column: TableColumn<RowRecord>): {
+      className: string
+      style: CSSProperties
+    } {
+      const side = normalizeColumnFixed(column.fixed)
+      const style: CSSProperties = {}
+      const classNames: string[] = []
+      if (side === 'left') {
+        classNames.push('hh-table__cell--fixed-left')
+        style.left = `${fixedOffsets.value.leftOffsets[column.key] ?? 0}px`
+        if (fixedOffsets.value.leftEdgeKey === column.key) {
+          classNames.push('hh-table__cell--fixed-left-last')
+        }
+      } else if (side === 'right') {
+        classNames.push('hh-table__cell--fixed-right')
+        style.right = `${fixedOffsets.value.rightOffsets[column.key] ?? 0}px`
+        if (fixedOffsets.value.rightEdgeKey === column.key) {
+          classNames.push('hh-table__cell--fixed-right-first')
+        }
+      }
+      return { className: classNames.join(' '), style }
+    }
+
     watchEffect(() => {
       if (headerCheckboxRef.value) {
         headerCheckboxRef.value.indeterminate = state.isCurrentPageIndeterminate.value
@@ -408,10 +461,21 @@ const HTable = defineComponent({
       const ths: JSX.Element[] = []
 
       if (props.rowSelection) {
+        const selectionFixed = hasLeftFixedColumns.value
         ths.push(
           <th
-            class="hh-table__th hh-table__th--selection"
-            style={{ width: toStyleWidth(props.rowSelection.columnWidth ?? 56) }}
+            class={[
+              'hh-table__th',
+              'hh-table__th--selection',
+              selectionFixed && 'hh-table__cell--fixed-left',
+              selectionFixed && !fixedOffsets.value.leftEdgeKey && 'hh-table__cell--fixed-left-last',
+            ]
+              .filter(Boolean)
+              .join(' ')}
+            style={{
+              width: toStyleWidth(props.rowSelection.columnWidth ?? 56),
+              ...(selectionFixed ? { left: 0 } : null),
+            }}
           >
             {isCheckboxSelection.value ? (
               <input
@@ -428,16 +492,19 @@ const HTable = defineComponent({
       }
 
       for (const column of mergedColumns.value) {
+        const fixedProps = getFixedCellProps(column)
         const thClass = [
           'hh-table__th',
           column.className,
           !!column.sorter && 'hh-table__th--sortable',
+          fixedProps.className,
         ].filter(Boolean)
 
         const thStyle = {
           width: toStyleWidth(column.width),
           textAlign: (column.align ?? 'left') as 'left' | 'center' | 'right',
           ...column.style,
+          ...fixedProps.style,
         }
 
         const filterActive = isFilterPanelOpen(column.key)
@@ -580,8 +647,19 @@ const HTable = defineComponent({
 
           if (props.rowSelection) {
             const selectionDisabled = state.isRowSelectionDisabled(record)
+            const selectionFixed = hasLeftFixedColumns.value
             tds.push(
-              <td class="hh-table__td hh-table__td--selection">
+              <td
+                class={[
+                  'hh-table__td',
+                  'hh-table__td--selection',
+                  selectionFixed && 'hh-table__cell--fixed-left',
+                  selectionFixed && !fixedOffsets.value.leftEdgeKey && 'hh-table__cell--fixed-left-last',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+                style={selectionFixed ? { left: 0 } : undefined}
+              >
                 <input
                   type={isCheckboxSelection.value ? 'checkbox' : 'radio'}
                   name={isCheckboxSelection.value ? undefined : 'hh-table-radio'}
@@ -609,15 +687,18 @@ const HTable = defineComponent({
           }
 
           for (const column of mergedColumns.value) {
+            const fixedProps = getFixedCellProps(column)
             const tdClass = [
               'hh-table__td',
               column.className,
               column.ellipsis && 'hh-table__td--ellipsis',
+              fixedProps.className,
             ].filter(Boolean)
 
             const tdStyle = {
               textAlign: (column.align ?? 'left') as 'left' | 'center' | 'right',
               ...column.style,
+              ...fixedProps.style,
             }
 
             const cellContent = getCellContent(column, record, absoluteIndex)
@@ -829,7 +910,10 @@ const HTable = defineComponent({
       return (
         <div class={tableClass.value.join(' ')}>
           <div class="hh-table__content" style={contentStyle.value}>
-            <table class="hh-table__table">
+            <table
+              class="hh-table__table"
+              style={tableMinWidth.value ? { minWidth: tableMinWidth.value } : undefined}
+            >
               <thead>
                 <tr>{ths}</tr>
               </thead>

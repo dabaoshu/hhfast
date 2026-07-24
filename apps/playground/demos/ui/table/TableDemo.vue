@@ -364,6 +364,34 @@ function handleTableChange(event: TableChangeEvent<DemoUser>) {
     </div>
 
     <div class="pg-card">
+      <h3>固定列 + 横向滚动</h3>
+      <p class="pg-card-desc">姓名左固定、操作右固定；设置 <code>scroll.x</code> 后可横向滚动</p>
+      <HTable
+        bordered
+        :columns="[
+          { key: 'name', title: '姓名', dataIndex: 'name', width: 140, fixed: 'left' },
+          { key: 'age', title: '年龄', dataIndex: 'age', width: 100 },
+          { key: 'score', title: '评分', dataIndex: 'score', width: 120 },
+          { key: 'city', title: '城市', dataIndex: 'city', width: 140 },
+          { key: 'status', title: '状态', dataIndex: 'status', width: 120 },
+          { key: 'createdAt', title: '创建时间', dataIndex: 'createdAt', width: 200 },
+          { key: 'tags', title: '标签', dataIndex: 'tags', width: 180 },
+          {
+            key: 'action',
+            title: '操作',
+            width: 100,
+            fixed: 'right',
+            render: () => h('a', { href: '#' }, '查看'),
+          },
+        ]"
+        :data-source="sourceData.slice(0, 8)"
+        :scroll="{ x: 1200, y: 280 }"
+        :pagination="false"
+        row-key="id"
+      />
+    </div>
+
+    <div class="pg-card">
       <h3>固定表头示例</h3>
       <p class="pg-card-desc">设置 <code>scroll.y</code> 后表体滚动，表头固定</p>
       <HTable
